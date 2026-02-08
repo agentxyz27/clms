@@ -131,30 +131,18 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  const user = req.user as any;
-
-  if (!req.isAuthenticated() || !user.expires_at) {
-    return res.status(401).json({ message: "Unauthorized" });
+  // Mock user for testing purposes to bypass login
+  if (!req.user) {
+    (req as any).user = {
+      claims: {
+        sub: "mock-student-id",
+        email: "student@example.edu",
+        first_name: "Mock",
+        last_name: "Student",
+        profile_image_url: "https://api.dicebear.com/7.x/avataaars/svg?seed=MockStudent"
+      },
+      expires_at: Math.floor(Date.now() / 1000) + 3600 * 24 * 365 // 1 year expiry
+    };
   }
-
-  const now = Math.floor(Date.now() / 1000);
-  if (now <= user.expires_at) {
-    return next();
-  }
-
-  const refreshToken = user.refresh_token;
-  if (!refreshToken) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
-
-  try {
-    const config = await getOidcConfig();
-    const tokenResponse = await client.refreshTokenGrant(config, refreshToken);
-    updateUserSession(user, tokenResponse);
-    return next();
-  } catch (error) {
-    res.status(401).json({ message: "Unauthorized" });
-    return;
-  }
+  return next();
 };

@@ -27,7 +27,7 @@ export function useAuth() {
     queryKey: ["/api/auth/user"],
     queryFn: fetchUser,
     retry: false,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: Infinity, // Keep mock user forever for testing
   });
 
   const logoutMutation = useMutation({
