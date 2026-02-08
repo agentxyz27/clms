@@ -55,7 +55,7 @@ export function CourseCard({ course, progress = 0 }: CourseCardProps) {
                 <span className="text-muted-foreground">Progress</span>
                 <span className="text-primary">{progress}%</span>
               </div>
-              <Progress value={progress} className="h-2 bg-secondary" indicatorClassName="bg-primary" />
+              <Progress value={progress} className="h-2 bg-secondary" />
             </div>
 
             {/* Action Button */}

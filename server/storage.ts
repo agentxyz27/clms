@@ -1,8 +1,9 @@
 import { db } from "./db";
 import { 
   courses, modules, assignments, submissions, enrollments, announcements, users,
-  type InsertCourse, type InsertModule, type InsertAssignment, type InsertSubmission, type InsertAnnouncement,
-  type Course, type Module, type Assignment, type Submission, type Announcement, type User
+  type InsertCourse, type InsertModule, type InsertAssignment, type InsertSubmission,
+  type Course, type Module, type Assignment, type Submission, type Announcement, type User,
+  type InsertAnnouncement
 } from "@shared/schema";
 import { eq, desc } from "drizzle-orm";
 
@@ -92,11 +93,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSubmission(assignmentId: number, studentId: string): Promise<Submission | undefined> {
-    const [submission] = await db.select()
+    const results = await db.select()
       .from(submissions)
-      .where(eq(submissions.assignmentId, assignmentId))
-      .where(eq(submissions.studentId, studentId));
-    return submission;
+      .where(eq(submissions.assignmentId, assignmentId));
+    return results.find(s => s.studentId === studentId);
   }
 
   async enrollUser(userId: string, courseId: number): Promise<void> {
