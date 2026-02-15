@@ -3,14 +3,21 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/use-auth";
 import { Loader2 } from "lucide-react";
 import { useEffect } from "react";
+
 import NotFound from "@/pages/not-found";
+import Resources from "@/pages/Resources";
+import Community from "./pages/Community";
+import Catalog from "./pages/Catalog";
+
 import Dashboard from "@/pages/Dashboard";
 import CourseDetail from "@/pages/CourseDetail";
+import Login from "@/pages/Login";
 import { Sidebar } from "@/components/Sidebar";
 import { RightSidebar } from "@/components/Widgets";
+import { useAuth } from "@/hooks/use-auth";
+import MyCourses from "./pages/MyCourses";
 
 function PrivateRoute({ component: Component, ...rest }: any) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -18,7 +25,7 @@ function PrivateRoute({ component: Component, ...rest }: any) {
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      window.location.href = "/api/login";
+      setLocation("/login"); // Frontend route instead of /api/login
     }
   }, [isAuthenticated, isLoading, setLocation]);
 
@@ -46,14 +53,34 @@ function PrivateRoute({ component: Component, ...rest }: any) {
 function Router() {
   return (
     <Switch>
+      <Route path="/login" component={Login} />
+      
       <Route path="/">
         <PrivateRoute component={Dashboard} />
       </Route>
+
+      <Route path="/resources">
+        <PrivateRoute component={Resources}/>
+      </Route>
+
+      <Route path="/MyCourses">
+        <PrivateRoute component={MyCourses}/>
+      </Route>
+
+      <Route path="/Community">
+        <PrivateRoute component={Community}/>
+      </Route>
+
+      <Route path="/Catalog">
+        <PrivateRoute component={Catalog}/>
+      </Route>
+      
       <Route path="/courses/:id">
         <PrivateRoute component={CourseDetail} />
       </Route>
-      {/* Fallback to 404 */}
+
       <Route component={NotFound} />
+
     </Switch>
   );
 }

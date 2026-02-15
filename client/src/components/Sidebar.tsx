@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/" },
-  { icon: BookOpen, label: "My Courses", href: "/courses" },
+  { icon: BookOpen, label: "My Courses", href: "/MyCourses" },
   { icon: Library, label: "Resources", href: "/resources" },
   { icon: Users, label: "Community", href: "/community" },
   { icon: Grid, label: "Catalog", href: "/catalog" },
@@ -37,8 +37,8 @@ export function Sidebar() {
           <GraduationCap className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="font-display font-bold text-lg leading-none">STI College</h1>
-          <p className="text-xs text-blue-200 mt-1 font-medium">LMS Portal</p>
+          <h1 className="font-display font-bold text-lg leading-none">Dolores Central School</h1>
+          <p className="text-xs text-blue-200 mt-1 font-medium">cLMS Portal</p>
         </div>
       </div>
 

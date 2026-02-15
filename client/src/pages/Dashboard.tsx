@@ -14,11 +14,13 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
+
   // Calculate random progress for demo purposes
   const getProgress = (id: number) => ((id * 17) % 100);
 
   return (
     <div className="space-y-8 pb-12">
+      
       {/* Welcome Banner */}
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -32,12 +34,11 @@ export default function Dashboard() {
         <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-4 max-w-xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-yellow-300 text-sm font-semibold backdrop-blur-md border border-white/10">
-              <Sparkles className="w-4 h-4" />
               <span>Keep up the great work!</span>
             </div>
             <h1 className="font-display font-bold text-3xl md:text-5xl leading-tight">
               Welcome back, <br/>
-              <span className="text-yellow-400">{user?.firstName || "Student"}!</span>
+              <span className="text-yellow-400">{user?.firstName || "Stupidents"}!</span>
             </h1>
             <p className="text-blue-100 text-lg">
               You have <span className="font-bold text-white">4 pending assignments</span> and <span className="font-bold text-white">2 quizzes</span> due this week.
@@ -45,12 +46,6 @@ export default function Dashboard() {
           </div>
           
           {/* Decorative Illustration placeholder */}
-          <div className="hidden md:block relative w-64 h-48">
-             {/* Abstract shapes representing learning */}
-             <div className="absolute right-4 top-4 w-12 h-12 rounded-lg bg-yellow-400 rotate-12 shadow-lg animate-bounce duration-3000" />
-             <div className="absolute right-20 top-10 w-8 h-8 rounded-full bg-blue-300 shadow-lg animate-pulse" />
-             <Trophy className="w-32 h-32 text-yellow-400 absolute bottom-0 right-10 drop-shadow-2xl filter" strokeWidth={1} />
-          </div>
         </div>
       </motion.div>
 
