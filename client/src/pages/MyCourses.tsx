@@ -9,7 +9,7 @@ export default function MyCourses() {
         <CardContent className="pt-6">
           <div className="flex mb-4 gap-2">
             <AlertCircle className="h-8 w-8 text-red-500" />
-            <h1 className="text-2xl font-bold text-gray-900">Cute talaga ni Xyrha</h1>
+            <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
           </div>
 
           <p className="mt-4 text-sm text-gray-600">
