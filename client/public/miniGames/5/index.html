@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hamster Mine Game</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #f4f4f4;
+      font-family: sans-serif;
+      overflow: hidden;
+    }
+
+    /* Start Screen Styles */
+    #startScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #222;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #startTitle {
+      color: white;
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    #startButton {
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      background: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    #startButton:hover {
+      background: #45a049;
+    }
+
+    /* Video Container Styles */
+    #videoContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: none;
+      z-index: 1001;
+    }
+
+    #cutsceneVideo {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Game Styles (unchanged from original) */
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 300px;
+      background: url('bg.png') no-repeat center center;
+      background-size: cover;
+      border-bottom: 4px solid green;
+      overflow: hidden;
+      display: none;
+    }
+
+    #player {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 50px;
+      height: 50px;
+      background: url('ham.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      transform: translateX(-50%);
+      z-index: 10;
+    }
+
+    #boulder {
+      position: absolute;
+      bottom: 0;
+      width: 80px;
+      height: 80px;
+      background: #555;
+      border-radius: 10px;
+    }
+
+    #obstacle {
+      position: absolute;
+      bottom: 50px;
+      width: 100px;
+      height: 60px;
+      background: #8B4513;
+      border-radius: 5px 5px 0 0;
+    }
+
+    #healthBarContainer {
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 200px;
+      height: 20px;
+      background: #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 10;
+      display: none;
+    }
+
+    #healthBar {
+      height: 100%;
+      width: 100%;
+      background: red;
+      transition: width 0.2s;
+    }
+
+    #warning {
+      position: fixed;
+      top: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 10px 20px;
+      background: rgba(255, 0, 0, 0.7);
+      color: white;
+      border-radius: 10px;
+      font-weight: bold;
+      display: none;
+      z-index: 20;
+    }
+
+    #lava {
+      position: absolute;
+      bottom: -80px;
+      width: 100%;
+      height: 45px;
+      background: linear-gradient(to top, #ff6600, #ff0000);
+      z-index: 5;
+      transition: bottom 5s;
+    }
+
+    /* Question modal styles */
+    #questionModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      max-width: 80%;
+    }
+
+    .question {
+      font-size: 18px;
+      margin-bottom: 20px;
+    }
+
+    .answer-btns {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+
+    .answer-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .answer-btn:hover {
+      background: #666;
+    }
+
+    /* Updated controls for d-pad layout */
+    .d-pad {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 5px;
+      width: 150px;
+      height: 150px;
+      z-index: 10;
+      display: none;
+    }
+
+    .d-pad button {
+      font-size: 18px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      touch-action: none;
+    }
+
+    .d-pad button:active {
+      background: #666;
+    }
+
+    #jumpBtn {
+      grid-column: 2;
+      grid-row: 1;
+    }
+
+    #leftBtn {
+      grid-column: 1;
+      grid-row: 2;
+    }
+
+    #rightBtn {
+      grid-column: 3;
+      grid-row: 2;
+    }
+
+    /* Empty space for center */
+    .center-space {
+      grid-column: 2;
+      grid-row: 2;
+      background: #333;
+      border-radius: 10px;
+      opacity: 0.5;
+    }
+
+    /* Mine button on right side */
+    .mine-controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: none;
+    }
+
+    .btn {
+      padding: 15px 20px;
+      font-size: 18px;
+      background: #444;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      touch-action: none;
+    }
+
+    .btn:active {
+      background: #666;
+    }
+
+    .particle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #777;
+      border-radius: 50%;
+      animation: particleAnimation 1s forwards;
+      bottom: 0;
+    }
+
+    @keyframes particleAnimation {
+      0% {
+        transform: translate(0, 0);
+        opacity: 1;
+      }
+      100% {
+        transform: translate(var(--x), var(--y));
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Start Screen -->
+  <div id="startScreen">
+    <h1 id="startTitle">Geological process</h1>
+    <button id="startButton">START</button>
+  </div>
+
+  <!-- Video Cutscene Container -->
+  <div id="videoContainer">
+    <video id="cutsceneVideo" preload="auto">
+      <source src="cutscene.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <!-- Game Elements (hidden initially) -->
+  <div id="game">
+    <div id="player"></div>
+    <div id="boulder"></div>
+    <div id="obstacle"></div>
+    <div id="lava"></div>
+  </div>
+
+  <div id="healthBarContainer">
+    <div id="healthBar"></div>
+  </div>
+
+  <div id="warning">LAVA COMING! 5</div>
+
+  <!-- Question modal -->
+  <div id="questionModal">
+    <div class="modal-content">
+      <div class="question">crush mopa ba siya?</div>
+      <div class="answer-btns">
+        <button class="answer-btn" id="yesBtn">Yes</button>
+        <button class="answer-btn" id="noBtn">No</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Replaced controls with d-pad layout -->
+  <div class="d-pad">
+    <button class="btn" id="jumpBtn">⬆️</button>
+    <button class="btn" id="leftBtn">⬅️</button>
+    <div class="center-space"></div>
+    <button class="btn" id="rightBtn">➡️</button>
+  </div>
+
+  <div class="mine-controls">
+    <button class="btn" id="mineBtn">⛏️</button>
+  </div>
+
+  <script>
+    // Start Screen and Video Elements
+    const startScreen = document.getElementById('startScreen');
+    const startButton = document.getElementById('startButton');
+    const videoContainer = document.getElementById('videoContainer');
+    const cutsceneVideo = document.getElementById('cutsceneVideo');
+
+    // Game Elements (unchanged from original)
+    const player = document.getElementById('player');
+    const game = document.getElementById('game');
+    const boulder = document.getElementById('boulder');
+    const obstacle = document.getElementById('obstacle');
+    const healthBar = document.getElementById('healthBar');
+    const warning = document.getElementById('warning');
+    const lava = document.getElementById('lava');
+    const questionModal = document.getElementById('questionModal');
+    const yesBtn = document.getElementById('yesBtn');
+    const noBtn = document.getElementById('noBtn');
+    const healthBarContainer = document.getElementById('healthBarContainer');
+    const dPad = document.querySelector('.d-pad');
+    const mineControls = document.querySelector('.mine-controls');
+
+    // Game Variables (unchanged from original)
+    let x = game.clientWidth / 2 - player.offsetWidth / 2;
+    let y = 0;
+    let vy = 0;
+    const gravity = -1;
+    let onGround = true;
+    let onObstacle = false;
+    const groundY = 0;
+    const speed = 5;
+
+    let movingLeft = false;
+    let movingRight = false;
+    let boulderHealth = 150;
+    let gameOver = false;
+    let lavaTimer = null;
+    let lavaCountdown = null;
+    let countdownValue = 5;
+
+    // Lava timing patterns (in milliseconds)
+    const lavaTiming = {
+      veryFast: { min: 1000, max: 3000 },
+      fast: { min: 2000, max: 5000 },
+      medium: { min: 4000, max: 8000 },
+      slow: { min: 7000, max: 12000 },
+      verySlow: { min: 10000, max: 15000 }
+    };
+
+    // Start Screen Event Listeners
+    startButton.addEventListener('click', startGame);
+
+    function startGame() {
+      // Hide start screen
+      startScreen.style.display = 'none';
+      
+      // Show video container
+      videoContainer.style.display = 'block';
+      
+      // Play the cutscene video (unmuted)
+      cutsceneVideo.muted = false;
+      cutsceneVideo.play();
+      
+      // When video ends, start the game
+      cutsceneVideo.addEventListener('ended', function() {
+        videoContainer.style.display = 'none';
+        initializeGameElements();
+      });
+    }
+
+    function initializeGameElements() {
+      // Show game elements
+      game.style.display = 'block';
+      healthBarContainer.style.display = 'block';
+      dPad.style.display = 'grid';
+      mineControls.style.display = 'block';
+      
+      // Set player position to middle
+      x = game.clientWidth / 2;
+      player.style.left = `${x}px`;
+      
+      // Place boulder on either far left or far right edge
+      const gameWidth = game.clientWidth;
+      const boulderWidth = boulder.offsetWidth;
+      
+      // Place boulder either on left or right edge
+      if (Math.random() < 0.5) {
+        // Place on left edge
+        boulder.style.left = `0px`;
+      } else {
+        // Place on right edge
+        boulder.style.left = `${gameWidth - boulderWidth}px`;
+      }
+
+      // Place obstacle on the opposite side of the boulder
+      const boulderLeft = parseFloat(boulder.style.left);
+      const obstaclePosition = boulderLeft < (gameWidth / 2) ? 
+        gameWidth - 100 : // if boulder is on left, obstacle goes right
+        0; // if boulder is on right, obstacle goes left
+      obstacle.style.left = `${obstaclePosition}px`;
+
+      // Reset boulder health
+      boulderHealth = 150;
+      healthBar.style.width = '100%';
+
+      // Initialize the game
+      initGame();
+    }
+
+    function createParticles() {
+      const particleCount = 15;
+      const boulderRect = boulder.getBoundingClientRect();
+      
+      for (let i = 0; i < particleCount; i++) {
+        const particle = document.createElement('div');
+        particle.classList.add('particle');
+        game.appendChild(particle);
+
+        const particleX = Math.random() * boulderRect.width;
+        const particleY = Math.random() * boulderRect.height;
+        
+        const offsetX = (Math.random() - 0.5) * 20;
+        const offsetY = -Math.random() * 30;
+
+        particle.style.setProperty('--x', `${offsetX}px`);
+        particle.style.setProperty('--y', `${offsetY}px`);
+        
+        particle.style.left = `${boulderRect.left + particleX}px`;
+        particle.style.bottom = `${game.offsetHeight - boulderRect.bottom + particleY}px`;
+
+        setTimeout(() => {
+          particle.remove();
+        }, 1000);
+      }
+    }
+
+    function updatePosition() {
+      if (gameOver) return;
+
+      vy += gravity;
+      y += vy;
+
+      const playerWidth = player.offsetWidth;
+      const playerHeight = player.offsetHeight;
+      const playerLeft = x - playerWidth / 2;
+      const playerRight = playerLeft + playerWidth;
+      const playerBottom = y;
+      const playerTop = y + playerHeight;
+
+      const obstacleRect = obstacle.getBoundingClientRect();
+      const gameRect = game.getBoundingClientRect();
+      const obstacleBottom = gameRect.height - obstacleRect.bottom;
+      const obstacleTop = obstacleBottom + obstacle.offsetHeight;
+      const obstacleLeft = obstacle.offsetLeft;
+      const obstacleRight = obstacleLeft + obstacle.offsetWidth;
+
+      if (playerRight > obstacleLeft && 
+          playerLeft < obstacleRight && 
+          playerBottom <= obstacleTop && 
+          playerBottom >= obstacleTop - 10 && 
+          vy <= 0) {
+        y = obstacleTop;
+        vy = 0;
+        onGround = true;
+        onObstacle = true;
+      } else {
+        onObstacle = false;
+        
+        if (y <= groundY && !onObstacle) {
+          y = groundY;
+          vy = 0;
+          onGround = true;
+        }
+      }
+
+      const boulderLeft = boulder.offsetLeft;
+      const boulderRight = boulderLeft + boulder.offsetWidth;
+
+      if (movingLeft) {
+        const nextX = x - speed;
+        const playerNextLeft = nextX - playerWidth / 2;
+        const playerNextRight = playerNextLeft + playerWidth;
+
+        if (!(playerNextRight > boulderLeft && playerNextLeft < boulderRight)) {
+          x = nextX;
+        }
+        if (x < playerWidth / 2) x = playerWidth / 2;
+        player.style.transform = 'translateX(-50%) scaleX(-1)';
+      }
+
+      if (movingRight) {
+        const nextX = x + speed;
+        const playerNextLeft = nextX - playerWidth / 2;
+        const playerNextRight = playerNextLeft + playerWidth;
+
+        if (!(playerNextRight > boulderLeft && playerNextLeft < boulderRight)) {
+          x = nextX;
+        }
+        const maxX = game.clientWidth - playerWidth / 2;
+        if (x > maxX) x = maxX;
+        player.style.transform = 'translateX(-50%) scaleX(1)';
+      }
+
+      const lavaTop = parseFloat(lava.style.bottom || "-80") + lava.offsetHeight;
+      if (lavaTop > y && !onObstacle) {
+        endGame();
+      }
+
+      player.style.bottom = `${y}px`;
+      player.style.left = `${x}px`;
+
+      requestAnimationFrame(updatePosition);
+    }
+
+    function jump() {
+      if (onGround) {
+        vy = 20;
+        onGround = false;
+      }
+    }
+
+    function mine() {
+      const playerWidth = player.offsetWidth;
+      const playerLeft = x - playerWidth / 2;
+      const playerRight = playerLeft + playerWidth;
+      const boulderLeft = boulder.offsetLeft;
+      const boulderRight = boulderLeft + boulder.offsetWidth;
+
+      // Check if player is close enough to the boulder (within 20px)
+      const isCloseToBoulder = Math.abs(playerRight - boulderLeft) < 20 || 
+                              Math.abs(playerLeft - boulderRight) < 20;
+
+      if (isCloseToBoulder && boulderHealth > 0) {
+        boulderHealth -= 5; // Increased damage per hit
+        healthBar.style.width = `${(boulderHealth / 150) * 100}%`;
+
+        createParticles();
+
+        if (boulderHealth <= 0) {
+          boulder.remove();
+          pauseGame();
+          questionModal.style.display = 'flex';
+        }
+      }
+    }
+
+    function getRandomTiming() {
+      const timingTypes = ['veryFast', 'fast', 'medium', 'slow', 'verySlow'];
+      const selectedTiming = timingTypes[Math.floor(Math.random() * timingTypes.length)];
+      const timing = lavaTiming[selectedTiming];
+      
+      return Math.floor(Math.random() * (timing.max - timing.min + 1)) + timing.min;
+    }
+
+    function startLava() {
+      if (gameOver) return;
+      
+      warning.style.display = 'block';
+      countdownValue = 5;
+      warning.textContent = `LAVA COMING! ${countdownValue}`;
+      
+      lavaCountdown = setInterval(() => {
+        countdownValue--;
+        warning.textContent = `LAVA COMING! ${countdownValue}`;
+        
+        if (countdownValue <= 0) {
+          clearInterval(lavaCountdown);
+          warning.style.display = 'none';
+          
+          lava.style.bottom = '0';
+          
+          setTimeout(resetLava, 6000);
+        }
+      }, 1000);
+    }
+
+    function resetLava() {
+      if (gameOver) return;
+      
+      lava.style.bottom = '-80px';
+      
+      const nextLavaDelay = getRandomTiming();
+      lavaTimer = setTimeout(startLava, nextLavaDelay);
+    }
+
+    function pauseGame() {
+      clearTimeout(lavaTimer);
+      clearInterval(lavaCountdown);
+      warning.style.display = 'none';
+    }
+
+    function endGame() {
+      gameOver = true;
+      clearTimeout(lavaTimer);
+      clearInterval(lavaCountdown);
+      warning.style.display = 'none';
+      alert("GAME OVER! POLAKSOT");
+      restartGame();
+    }
+
+    function restartGame() {
+      location.reload();
+    }
+
+    function handleAnswer(answer) {
+      questionModal.style.display = 'none';
+      alert(`You answered: ${answer}. Game Over!`);
+      restartGame();
+    }
+
+    function initGame() {
+      updatePosition();
+      lavaTimer = setTimeout(startLava, 6000);
+    }
+
+    // Button controls (unchanged from original)
+    document.getElementById('leftBtn').addEventListener('touchstart', () => movingLeft = true);
+    document.getElementById('leftBtn').addEventListener('touchend', () => movingLeft = false);
+    document.getElementById('leftBtn').addEventListener('mousedown', () => movingLeft = true);
+    document.getElementById('leftBtn').addEventListener('mouseup', () => movingLeft = false);
+    document.getElementById('leftBtn').addEventListener('mouseleave', () => movingLeft = false);
+
+    document.getElementById('rightBtn').addEventListener('touchstart', () => movingRight = true);
+    document.getElementById('rightBtn').addEventListener('touchend', () => movingRight = false);
+    document.getElementById('rightBtn').addEventListener('mousedown', () => movingRight = true);
+    document.getElementById('rightBtn').addEventListener('mouseup', () => movingRight = false);
+    document.getElementById('rightBtn').addEventListener('mouseleave', () => movingRight = false);
+
+    document.getElementById('jumpBtn').addEventListener('click', jump);
+    document.getElementById('jumpBtn').addEventListener('touchstart', jump);
+    document.getElementById('mineBtn').addEventListener('click', mine);
+    document.getElementById('mineBtn').addEventListener('touchstart', mine);
+
+    // Question answer buttons
+    yesBtn.addEventListener('click', () => handleAnswer('Yes'));
+    noBtn.addEventListener('click', () => handleAnswer('No'));
+
+    // Keyboard controls
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') movingLeft = true;
+      if (e.key === 'ArrowRight') movingRight = true;
+      if (e.key === ' ' || e.key === 'ArrowUp') jump();
+      if (e.key === 'x') mine();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.key === 'ArrowLeft') movingLeft = false;
+      if (e.key === 'ArrowRight') movingRight = false;
+    });
+  </script>
+</body>
+</html>
