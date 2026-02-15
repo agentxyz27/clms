@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Form the earth</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+      font-family: sans-serif;
+      color: white;
+    }
+    canvas {
+      display: none; /* Initially hidden */
+    }
+    
+    /* Start Screen Styles */
+    #startScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+    
+    #startTitle {
+      color: #fff;
+      font-size: 3rem;
+      margin-bottom: 30px;
+      text-align: center;
+      text-shadow: 0 0 10px rgba(255,255,255,0.5);
+    }
+    
+    #startButton {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 0 15px rgba(76, 175, 80, 0.7);
+    }
+    
+    #startButton:hover {
+      background-color: #45a049;
+      transform: scale(1.05);
+    }
+    
+    /* Cutscene Styles */
+    #cutsceneContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #000;
+      z-index: 99;
+      display: none;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    #cutsceneVideo {
+      width: 100%;
+      height: 100%;
+      max-width: 800px;
+      max-height: 800px;
+      object-fit: contain;
+    }
+
+    #win {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      padding: 20px;
+      border-radius: 10px;
+      font-size: 20px;
+      z-index: 10;
+      color: white;
+      display: none;
+      text-align: center;
+    }
+    #quiz {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 30px;
+      border-radius: 10px;
+      font-size: 18px;
+      z-index: 20;
+      color: white;
+      display: none;
+      width: 80%;
+      max-width: 500px;
+    }
+    #quiz h2 {
+      margin-top: 0;
+      color: #4CAF50;
+    }
+    .quiz-option {
+      background: #333;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .quiz-option:hover {
+      background: #444;
+    }
+    #quiz-result {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+    #continue-btn {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      margin-top: 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    #continue-btn:hover {
+      background: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <!-- Start Screen -->
+  <div id="startScreen">
+    <h1 id="startTitle">Form the Earth</h1>
+    <button id="startButton">START GAME</button>
+  </div>
+  
+  <!-- Cutscene Container -->
+  <div id="cutsceneContainer">
+    <video id="cutsceneVideo" preload="auto">
+      <!-- Replace with your actual MP4 file -->
+      <source src="cutscene.mp4" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <!-- Game Canvas -->
+  <canvas id="game"></canvas>
+  <div id="win">nabuo mona ang feelings ko sayo</div>
+  <div id="quiz">
+    <h2>Earth Science Quiz</h2>
+    <div id="quiz-question"></div>
+    <div id="quiz-options"></div>
+    <div id="quiz-result"></div>
+    <button id="continue-btn" style="display: none;">Continue Game</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Start screen elements
+    const startScreen = document.getElementById("startScreen");
+    const startButton = document.getElementById("startButton");
+    const cutsceneContainer = document.getElementById("cutsceneContainer");
+    const cutsceneVideo = document.getElementById("cutsceneVideo");
+
+    let centerX = canvas.width / 2;
+    let centerY = 100;
+    let hookBaseY = centerY + 20;
+
+    let hookX = centerX;
+    let hookY = hookBaseY;
+    let targetX = centerX;
+    let targetY = hookBaseY;
+    let isExtending = false;
+    let isRetracting = false;
+    let gamePaused = false;
+
+    let rocks = [];
+    let collected = 0;
+    const totalRocks = 20;
+    const totalTraps = 5;
+    let earthSize = 30; // Reduced initial size from 40 to 30
+
+    // Load images
+    const bgImage = new Image();
+    bgImage.src = "bg.png";
+
+    const playerImage = new Image();
+    playerImage.src = "ham.png";
+
+    const rockImage = new Image();
+    rockImage.src = "rocks.png";
+    const trapImage = new Image();
+    trapImage.src = "rocks.png";
+
+    const earthImage = new Image();
+    earthImage.src = "earth.png";
+
+    // Earth Science Quiz Questions
+    const quizQuestions = [
+      {
+        question: "What is the estimated age of the Earth?",
+        options: ["4.6 million years", "4.6 billion years", "13.8 billion years", "1.2 billion years"],
+        answer: 1
+      },
+      {
+        question: "Which process was primarily responsible for the initial heating of Earth?",
+        options: ["Solar radiation", "Volcanic activity", "Gravitational compression and radioactive decay", "Meteorite impacts"],
+        answer: 2
+      },
+      {
+        question: "What is the name of the theory that explains the formation of the Moon?",
+        options: ["Capture theory", "Fission theory", "Giant Impact hypothesis", "Co-formation theory"],
+        answer: 2
+      },
+      {
+        question: "Which layer of Earth is primarily composed of iron and nickel?",
+        options: ["Crust", "Mantle", "Outer core", "Inner core"],
+        answer: 3
+      },
+      {
+        question: "What was the main component of Earth's early atmosphere?",
+        options: ["Oxygen", "Carbon dioxide", "Nitrogen", "Hydrogen and helium"],
+        answer: 3
+      },
+      {
+        question: "Which of these was NOT a source of Earth's water?",
+        options: ["Outgassing from volcanoes", "Comet impacts", "Asteroid impacts", "Photosynthesis by early plants"],
+        answer: 3
+      },
+      {
+        question: "What process led to the differentiation of Earth's layers?",
+        options: ["Plate tectonics", "The greenhouse effect", "Partial melting and density differences", "Magnetic field formation"],
+        answer: 2
+      }
+    ];
+
+    // Start the game when start button is clicked
+    startButton.addEventListener("click", () => {
+      startScreen.style.display = "none";
+      cutsceneContainer.style.display = "flex";
+      
+      // Play the cutscene video (unmuted)
+      cutsceneVideo.muted = false;
+      cutsceneVideo.play();
+      
+      // When video ends, start the game
+      cutsceneVideo.addEventListener("ended", () => {
+        cutsceneContainer.style.display = "none";
+        canvas.style.display = "block";
+        spawnRocks();
+        gameLoop();
+      }, { once: true });
+      
+      // Also handle if video fails to play
+      cutsceneVideo.addEventListener("error", () => {
+        console.error("Error playing cutscene, starting game anyway");
+        cutsceneContainer.style.display = "none";
+        canvas.style.display = "block";
+        spawnRocks();
+        gameLoop();
+      });
+    });
+
+    function spawnRocks() {
+      rocks = [];
+      let placedTraps = 0;
+
+      // Create regular rocks
+      for (let i = 0; i < totalRocks - totalTraps; i++) {
+        rocks.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * (canvas.height - 300) + 300,
+          size: 20 + Math.random() * 10,
+          collected: false,
+          isTrap: false
+        });
+      }
+
+      // Create trap rocks
+      for (let i = 0; i < totalTraps; i++) {
+        rocks.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * (canvas.height - 300) + 300,
+          size: 20 + Math.random() * 10,
+          collected: false,
+          isTrap: true
+        });
+      }
+
+      // Shuffle the rocks array to mix traps and regular rocks
+      for (let i = rocks.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [rocks[i], rocks[j]] = [rocks[j], rocks[i]];
+      }
+    }
+
+    function drawBackground() {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    }
+
+    function drawPlayer() {
+      ctx.drawImage(playerImage, centerX - 20, centerY - 20, 40, 40);
+    }
+
+    function drawEarth() {
+      // Earth is now closer (x offset reduced from 200 to 80) and starts smaller
+      ctx.drawImage(
+        earthImage, 
+        centerX + 80 - earthSize,  // Reduced from 200 to 80
+        centerY - earthSize, 
+        earthSize * 2, 
+        earthSize * 2
+      );
+    }
+
+    function drawRocks() {
+      for (let rock of rocks) {
+        if (!rock.collected) {
+          if (rock.isTrap) {
+            ctx.drawImage(trapImage, rock.x - rock.size, rock.y - rock.size, rock.size * 2, rock.size * 2);
+          } else {
+            ctx.drawImage(rockImage, rock.x - rock.size, rock.y - rock.size, rock.size * 2, rock.size * 2);
+          }
+        }
+      }
+    }
+
+    function drawHook() {
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX, hookBaseY);
+      ctx.lineTo(hookX, hookY);
+      ctx.stroke();
+
+      ctx.fillStyle = "#f1c40f";
+      ctx.beginPath();
+      ctx.arc(hookX, hookY, 10, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    function updateHook() {
+      if (gamePaused) return;
+      
+      if (isExtending) {
+        let dx = targetX - hookX;
+        let dy = targetY - hookY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        let speed = 10;
+
+        if (distance < speed) {
+          hookX = targetX;
+          hookY = targetY;
+          isExtending = false;
+          checkForRocks();
+          isRetracting = true;
+        } else {
+          hookX += dx / distance * speed;
+          hookY += dy / distance * speed;
+        }
+      }
+
+      if (isRetracting) {
+        let dx = centerX - hookX;
+        let dy = hookBaseY - hookY;
+        let distance = Math.sqrt(dx * dx + dy * dy);
+        let speed = 10;
+
+        if (distance < speed) {
+          hookX = centerX;
+          hookY = hookBaseY;
+          isRetracting = false;
+        } else {
+          hookX += dx / distance * speed;
+          hookY += dy / distance * speed;
+        }
+      }
+    }
+
+    function checkForRocks() {
+      for (let rock of rocks) {
+        if (!rock.collected) {
+          let dx = rock.x - hookX;
+          let dy = rock.y - hookY;
+          let dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < rock.size + 10) {
+            rock.collected = true;
+            collected++;
+            
+            if (rock.isTrap) {
+              gamePaused = true;
+              showQuiz();
+            } else {
+              earthSize += 3; // Reduced growth from 5 to 3 per rock
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    function showQuiz() {
+      const quiz = document.getElementById("quiz");
+      const questionElement = document.getElementById("quiz-question");
+      const optionsElement = document.getElementById("quiz-options");
+      const resultElement = document.getElementById("quiz-result");
+      const continueBtn = document.getElementById("continue-btn");
+      
+      const randomQuestion = quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
+      
+      questionElement.textContent = randomQuestion.question;
+      optionsElement.innerHTML = "";
+      resultElement.textContent = "";
+      continueBtn.style.display = "none";
+      
+      randomQuestion.options.forEach((option, index) => {
+        const optionElement = document.createElement("div");
+        optionElement.className = "quiz-option";
+        optionElement.textContent = option;
+        optionElement.addEventListener("click", () => {
+          if (index === randomQuestion.answer) {
+            resultElement.textContent = "Correct! Earth grows larger.";
+            resultElement.style.color = "#2ecc71";
+            earthSize += 10; // Reduced from 15 to 10
+          } else {
+            resultElement.textContent = `Incorrect! The correct answer is: ${randomQuestion.options[randomQuestion.answer]}`;
+            resultElement.style.color = "#e74c3c";
+            earthSize = Math.max(30, earthSize - 5); // Minimum size of 30 (reduced from 40)
+          }
+          
+          const options = document.querySelectorAll(".quiz-option");
+          options.forEach(opt => {
+            opt.style.pointerEvents = "none";
+            if (parseInt(opt.dataset.index) === randomQuestion.answer) {
+              opt.style.backgroundColor = "#27ae60";
+            }
+          });
+          
+          continueBtn.style.display = "block";
+        });
+        optionElement.dataset.index = index;
+        optionsElement.appendChild(optionElement);
+      });
+      
+      quiz.style.display = "block";
+    }
+
+    function gameLoop() {
+      if (gamePaused) return;
+      
+      drawBackground();
+      drawPlayer();
+      drawEarth();
+      drawRocks();
+      drawHook();
+      updateHook();
+
+      ctx.fillStyle = "white";
+      ctx.font = "20px sans-serif";
+      ctx.fillText(`Rocks Collected: ${collected}/${totalRocks}`, 20, 30);
+
+      if (collected >= totalRocks) {
+        document.getElementById("win").style.display = "block";
+        return;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.getElementById("continue-btn").addEventListener("click", () => {
+      document.getElementById("quiz").style.display = "none";
+      gamePaused = false;
+      gameLoop();
+    });
+
+    canvas.addEventListener("click", (e) => {
+      if (!isExtending && !isRetracting && !gamePaused) {
+        targetX = e.clientX;
+        targetY = e.clientY;
+        isExtending = true;
+      }
+    });
+
+    // Preload images and show start screen
+    let imagesLoaded = 0;
+    function imageLoaded() {
+      imagesLoaded++;
+      if (imagesLoaded === 5) {
+        // Show start screen (game will start when user clicks start button)
+        startScreen.style.display = "flex";
+        cutsceneVideo.load();
+      }
+    }
+
+    bgImage.onload = imageLoaded;
+    playerImage.onload = imageLoaded;
+    rockImage.onload = imageLoaded;
+    trapImage.onload = imageLoaded;
+    earthImage.onload = imageLoaded;
+
+    window.addEventListener("resize", () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      centerX = canvas.width / 2;
+    });
+  </script>
+</body>
+</html>

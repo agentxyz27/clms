@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eco-Hamster Defenders of the Earth</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+        
+        /* Start Screen */
+        .start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        
+        .start-title {
+            color: #fff;
+            font-size: 48px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .start-button {
+            padding: 15px 30px;
+            font-size: 24px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .start-button:hover {
+            background-color: #45a049;
+        }
+        
+        /* Video Cutscene */
+        .video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            z-index: 200;
+            display: none;
+        }
+        
+        #cutsceneVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        
+        /* Game Elements */
+        .quiz-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 100;
+        }
+        
+        .quiz-option {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #f0f0f0;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+        
+        .quiz-option:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            color: red;
+            display: none;
+            z-index: 100;
+        }
+        
+        .game-win {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 40px;
+            font-weight: bold;
+            color: green;
+            display: none;
+            z-index: 100;
+        }
+        
+        /* Mobile Controls */
+        .controls {
+            position: fixed;
+            width: 100%;
+            height: 150px;
+            bottom: 0;
+            left: 0;
+            z-index: 10;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+        }
+        
+        .d-pad {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            margin-left: 20px;
+            margin-bottom: 20px;
+            pointer-events: auto;
+        }
+        
+        .d-pad-button {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            user-select: none;
+        }
+        
+        .d-pad-up {
+            top: 0;
+            left: 50px;
+        }
+        
+        .d-pad-left {
+            top: 50px;
+            left: 0;
+        }
+        
+        .d-pad-right {
+            top: 50px;
+            left: 100px;
+        }
+        
+        .d-pad-down {
+            top: 100px;
+            left: 50px;
+        }
+        
+        .shoot-button {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 0, 0, 0.5);
+            border-radius: 50%;
+            position: absolute;
+            right: 30px;
+            bottom: 30px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 20px;
+            color: white;
+            pointer-events: auto;
+            user-select: none;
+        }
+        
+        @media (max-width: 768px) {
+            .start-title {
+                font-size: 36px;
+            }
+            
+            .d-pad {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .d-pad-button {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .d-pad-up {
+                top: 0;
+                left: 40px;
+            }
+            
+            .d-pad-left {
+                top: 40px;
+                left: 0;
+            }
+            
+            .d-pad-right {
+                top: 40px;
+                left: 80px;
+            }
+            
+            .d-pad-down {
+                top: 80px;
+                left: 40px;
+            }
+            
+            .shoot-button {
+                width: 70px;
+                height: 70px;
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div class="start-screen" id="startScreen">
+        <h1 class="start-title">Earth<br>Resources</h1>
+        <button class="start-button" id="startButton">START GAME</button>
+    </div>
+    
+    <!-- Video Cutscene -->
+    <div class="video-container" id="videoContainer">
+        <video id="cutsceneVideo" autoplay>
+            <source src="cutscene.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
+    <!-- Game Canvas -->
+    <canvas id="gameCanvas"></canvas>
+    <div id="quizContainer" class="quiz-container">
+        <h2 id="quizQuestion"></h2>
+        <div id="quizOptions">
+            <div class="quiz-option" id="optionA"></div>
+            <div class="quiz-option" id="optionB"></div>
+            <div class="quiz-option" id="optionC"></div>
+            <div class="quiz-option" id="optionD"></div>
+        </div>
+    </div>
+    <div id="gameOver" class="game-over">Game Over</div>
+    <div id="gameWin" class="game-win">You Win</div>
+    
+    <!-- Mobile Controls -->
+    <div class="controls">
+        <div class="d-pad">
+            <div class="d-pad-button d-pad-up" id="up">↑</div>
+            <div class="d-pad-button d-pad-left" id="left">←</div>
+            <div class="d-pad-button d-pad-right" id="right">→</div>
+            <div class="d-pad-button d-pad-down" id="down">↓</div>
+        </div>
+        <div class="shoot-button" id="shoot">SHOOT</div>
+    </div>
+
+    <script>
+        // Game state variables
+        let gameRunning = false;
+        let quizActive = false;
+        let currentQuestionIndex = -1;
+        let enemySpawnInterval;
+        let enemyDespawnTimeout;
+        
+        // DOM Elements
+        const startScreen = document.getElementById("startScreen");
+        const startButton = document.getElementById("startButton");
+        const videoContainer = document.getElementById("videoContainer");
+        const cutsceneVideo = document.getElementById("cutsceneVideo");
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Game assets
+        const background = new Image();
+        background.src = "bg.png";
+
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            width: 50,
+            height: 50,
+            speed: 5,
+            dx: 0,
+            dy: 0,
+            facing: "right",
+            imageRight: new Image(),
+            imageLeft: new Image(),
+            currentImage: null,
+            sunsCollected: 0,
+            coalCollected: 0,
+            health: 3
+        };
+
+        player.imageRight.src = "ham.png";
+        player.imageLeft.src = "ham2.png";
+
+        const enemies = [];
+        const bullets = [];
+        const suns = [];
+        const coals = [];
+
+        const enemyImage = new Image();
+        enemyImage.src = "enemy.png";
+
+        const sunImage = new Image();
+        sunImage.src = "sun.png";
+
+        const bulletImage = new Image();
+        bulletImage.src = "bullet.png";
+
+        const coalImage = new Image();
+        coalImage.src = "coal.png";
+
+        const quizQuestions = [
+            {
+                question: "Which of the following is the most significant environmental concern associated with the extraction of fossil fuels?",
+                options: { A: "Loss of biodiversity", B: "Ocean acidification", C: "Air pollution and greenhouse gas emissions", D: "Soil erosion" },
+                correctAnswer: "C"
+            },
+            {
+                question: "What is the process of converting natural gas into usable energy called?",
+                options: { A: "Fracking", B: "Combustion", C: "Refining", D: "Photosynthesis" },
+                correctAnswer: "B"
+            },
+            {
+                question: "Which of the following is a renewable resource?",
+                options: { A: "Oil", B: "Natural gas", C: "Wind energy", D: "Coal" },
+                correctAnswer: "C"
+            },
+            {
+                question: "Which of the following minerals is most commonly associated with the production of electronics?",
+                options: { A: "Copper", B: "Diamond", C: "Gypsum", D: "Zinc" },
+                correctAnswer: "A"
+            },
+            {
+                question: "Which type of energy is generated from the Earth's internal heat?",
+                options: { A: "Geothermal energy", B: "Solar energy", C: "Hydroelectric energy", D: "Wind energy" },
+                correctAnswer: "A"
+            },
+            {
+                question: "What is the main environmental benefit of using nuclear energy?",
+                options: { A: "It produces no greenhouse gas emissions", B: "It is renewable", C: "It is abundant and inexpensive", D: "It can be used to heat homes directly" },
+                correctAnswer: "A"
+            },
+            {
+                question: "Which of the following is NOT a method of mining?",
+                options: { A: "Open-pit mining", B: "Subsurface mining", C: "Hydraulic fracturing", D: "Solar panel extraction" },
+                correctAnswer: "D"
+            },
+            {
+                question: "Which of the following is a major disadvantage of using hydroelectric energy?",
+                options: { A: "It requires fossil fuels", B: "It can disrupt local ecosystems", C: "It causes air pollution", D: "It is highly dependent on the weather" },
+                correctAnswer: "B"
+            },
+            {
+                question: "What is the main source of the Earth's energy?",
+                options: { A: "The moon", B: "The sun", C: "Nuclear fusion from the core", D: "Earth's internal heat" },
+                correctAnswer: "B"
+            },
+            {
+                question: "Which of the following resources is considered a biotic resource?",
+                options: { A: "Coal", B: "Timber", C: "Natural gas", D: "Metals" },
+                correctAnswer: "B"
+            }
+        ];
+
+        // Touch control variables
+        let upPressed = false;
+        let downPressed = false;
+        let leftPressed = false;
+        let rightPressed = false;
+
+        // Start game function
+        function startGame() {
+            startScreen.style.display = "none";
+            videoContainer.style.display = "block";
+            
+            // Unmute the video (some browsers require this to be done in a user gesture)
+            cutsceneVideo.muted = false;
+            
+            // Play the video
+            cutsceneVideo.play();
+        }
+        
+        // When video ends, start the game
+        cutsceneVideo.addEventListener('ended', function() {
+            videoContainer.style.display = "none";
+            initGame();
+        });
+        
+        // Start button event listener
+        startButton.addEventListener('click', startGame);
+        
+        // Initialize the game after cutscene
+        function initGame() {
+            gameRunning = true;
+            
+            // Start enemy spawning cycle
+            spawnEnemyGroup();
+            enemySpawnInterval = setInterval(spawnEnemyGroup, 13000); // Spawn new group every 13 seconds (10s despawn + 3s delay)
+            
+            setInterval(spawnSun, 5000);
+            setInterval(spawnCoal, 7000);
+            
+            // Start the game loop
+            background.onload = () => {
+                player.imageRight.onload = player.imageLeft.onload = function () {
+                    player.currentImage = player.imageRight;
+                    update();
+                };
+            };
+        }
+
+        function getRandomQuestion() {
+            currentQuestionIndex = Math.floor(Math.random() * quizQuestions.length);
+            return quizQuestions[currentQuestionIndex];
+        }
+
+        function spawnEnemyGroup() {
+            if (!gameRunning || enemies.length >= 3) return;
+            
+            // Clear existing enemies
+            enemies.length = 0;
+            
+            // Spawn 3 new enemies
+            for (let i = 0; i < 3; i++) {
+                const side = Math.floor(Math.random() * 4);
+                let enemy = {
+                    x: 0, y: 0, width: 50, height: 50, speedX: 0, speedY: 0,
+                    spawnTime: Date.now() // Track when this enemy was spawned
+                };
+
+                if (side === 0) {
+                    enemy.x = Math.random() * canvas.width;
+                    enemy.y = 0;
+                } else if (side === 1) {
+                    enemy.x = Math.random() * canvas.width;
+                    enemy.y = canvas.height - 50;
+                } else if (side === 2) {
+                    enemy.x = 0;
+                    enemy.y = Math.random() * canvas.height;
+                } else {
+                    enemy.x = canvas.width - 50;
+                    enemy.y = Math.random() * canvas.height;
+                }
+
+                enemy.speedX = (Math.random() - 0.5) * 4;
+                enemy.speedY = (Math.random() - 0.5) * 4;
+
+                enemies.push(enemy);
+            }
+            
+            // Schedule despawning after 10 seconds
+            if (enemyDespawnTimeout) clearTimeout(enemyDespawnTimeout);
+            enemyDespawnTimeout = setTimeout(() => {
+                if (gameRunning) {
+                    enemies.length = 0; // Clear all enemies
+                    spawnEnemyGroup(); // Spawn new group immediately
+                }
+            }, 10000);
+        }
+
+        function spawnSun() {
+            if (!gameRunning) return;
+            
+            const sun = {
+                x: Math.random() * (canvas.width - 40),
+                y: Math.random() * (canvas.height - 40),
+                width: 40,
+                height: 40
+            };
+            suns.push(sun);
+        }
+
+        function spawnCoal() {
+            if (!gameRunning) return;
+            
+            const coal = {
+                x: Math.random() * (canvas.width - 40),
+                y: Math.random() * (canvas.height - 40),
+                width: 40,
+                height: 40
+            };
+            coals.push(coal);
+        }
+
+        function drawBackground() {
+            ctx.drawImage(background, 0, 0, canvas.width, canvas.height);
+        }
+
+        function drawPlayer() {
+            if (player.currentImage) {
+                ctx.drawImage(player.currentImage, player.x, player.y, player.width, player.height);
+            }
+        }
+
+        function drawEnemies() {
+            enemies.forEach(enemy => {
+                ctx.drawImage(enemyImage, enemy.x, enemy.y, enemy.width, enemy.height);
+            });
+        }
+
+        function drawSuns() {
+            suns.forEach(sun => {
+                ctx.drawImage(sunImage, sun.x, sun.y, sun.width, sun.height);
+            });
+        }
+
+        function drawCoals() {
+            coals.forEach(coal => {
+                ctx.drawImage(coalImage, coal.x, coal.y, coal.width, coal.height);
+            });
+        }
+
+        function drawBullets() {
+            bullets.forEach(bullet => {
+                ctx.drawImage(bulletImage, bullet.x, bullet.y, bullet.width, bullet.height);
+            });
+        }
+
+        function drawStats() {
+            ctx.font = "20px Arial";
+            ctx.fillStyle = "white";
+            ctx.fillText("Health: " + player.health, 20, 30);
+            ctx.fillText("Suns Collected: " + player.sunsCollected, 20, 60);
+            ctx.fillText("Coal Collected: " + player.coalCollected + "/20", 20, 90);
+            
+            // Show enemy countdown timer
+            if (enemies.length > 0 && enemyDespawnTimeout) {
+                const timeLeft = Math.ceil((enemyDespawnTimeout._idleStart + enemyDespawnTimeout._idleTimeout - Date.now()) / 1000);
+                ctx.fillText("Enemies: " + timeLeft + "s", 20, 120);
+            }
+        }
+
+        function updateEnemies() {
+            enemies.forEach((enemy, eIndex) => {
+                if (!quizActive && gameRunning) {
+                    enemy.x += enemy.speedX;
+                    enemy.y += enemy.speedY;
+
+                    if (enemy.x < 0 || enemy.x + enemy.width > canvas.width) {
+                        enemy.speedX *= -1;
+                    }
+                    if (enemy.y < 0 || enemy.y + enemy.height > canvas.height) {
+                        enemy.speedY *= -1;
+                    }
+
+                    // Check for collision with player
+                    if (
+                        player.x < enemy.x + enemy.width &&
+                        player.x + player.width > enemy.x &&
+                        player.y < enemy.y + enemy.height &&
+                        player.y + player.height > enemy.y
+                    ) {
+                        if (!quizActive) {
+                            triggerQuiz();
+                            enemies.splice(eIndex, 1); // Remove the enemy that triggered the quiz
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateBullets() {
+            bullets.forEach((bullet, bIndex) => {
+                bullet.x += bullet.speedX;
+                bullet.y += bullet.speedY;
+
+                enemies.forEach((enemy, eIndex) => {
+                    if (
+                        bullet.x < enemy.x + enemy.width &&
+                        bullet.x + bullet.width > enemy.x &&
+                        bullet.y < enemy.y + enemy.height &&
+                        bullet.y + bullet.height > enemy.y
+                    ) {
+                        enemies.splice(eIndex, 1);
+                        bullets.splice(bIndex, 1);
+                    }
+                });
+            });
+        }
+
+        function shoot() {
+            if (player.sunsCollected > 0 && gameRunning) {
+                const bulletSpeed = 15;
+                let bullet = {
+                    x: player.x + player.width / 2 - 10,
+                    y: player.y + player.height / 2 - 5,
+                    width: 30,
+                    height: 15,
+                    speedX: player.facing === "right" ? bulletSpeed : -bulletSpeed,
+                    speedY: 0
+                };
+                bullets.push(bullet);
+                player.sunsCollected--;
+            }
+        }
+
+        function move(e) {
+            if (!quizActive && gameRunning) {
+                if (e.key === "ArrowRight") {
+                    player.dx = player.speed;
+                    player.currentImage = player.imageRight;
+                    player.facing = "right";
+                }
+                if (e.key === "ArrowLeft") {
+                    player.dx = -player.speed;
+                    player.currentImage = player.imageLeft;
+                    player.facing = "left";
+                }
+                if (e.key === "ArrowUp") player.dy = -player.speed;
+                if (e.key === "ArrowDown") player.dy = player.speed;
+            }
+        }
+
+        function stop(e) {
+            if (["ArrowRight", "ArrowLeft"].includes(e.key)) player.dx = 0;
+            if (["ArrowUp", "ArrowDown"].includes(e.key)) player.dy = 0;
+        }
+
+        function collectSuns() {
+            suns.forEach((sun, index) => {
+                if (
+                    player.x < sun.x + sun.width &&
+                    player.x + player.width > sun.x &&
+                    player.y < sun.y + sun.height &&
+                    player.y + player.height > sun.y
+                ) {
+                    suns.splice(index, 1);
+                    player.sunsCollected++;
+                }
+            });
+        }
+
+        function collectCoals() {
+            coals.forEach((coal, index) => {
+                if (
+                    player.x < coal.x + coal.width &&
+                    player.x + player.width > coal.x &&
+                    player.y < coal.y + coal.height &&
+                    player.y + player.height > coal.y
+                ) {
+                    coals.splice(index, 1);
+                    player.coalCollected++;
+                    
+                    // Check win condition (now only 20 coals needed)
+                    if (player.coalCollected >= 20) {
+                        gameRunning = false;
+                        clearInterval(enemySpawnInterval);
+                        clearTimeout(enemyDespawnTimeout);
+                        document.getElementById("gameWin").style.display = "block";
+                    }
+                }
+            });
+        }
+
+        function preventEdgeMovement() {
+            if (player.x < 0) player.x = 0;
+            if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+            if (player.y < 0) player.y = 0;
+            if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+        }
+
+        // Quiz-related functions
+        function triggerQuiz() {
+            const currentQuestion = getRandomQuestion();
+            quizActive = true;
+            document.getElementById("quizContainer").style.display = "block";
+            document.getElementById("quizQuestion").innerText = currentQuestion.question;
+            document.getElementById("optionA").innerText = currentQuestion.options.A;
+            document.getElementById("optionB").innerText = currentQuestion.options.B;
+            document.getElementById("optionC").innerText = currentQuestion.options.C;
+            document.getElementById("optionD").innerText = currentQuestion.options.D;
+
+            document.getElementById("optionA").onclick = () => checkAnswer("A", currentQuestion);
+            document.getElementById("optionB").onclick = () => checkAnswer("B", currentQuestion);
+            document.getElementById("optionC").onclick = () => checkAnswer("C", currentQuestion);
+            document.getElementById("optionD").onclick = () => checkAnswer("D", currentQuestion);
+        }
+
+        function checkAnswer(selectedOption, currentQuestion) {
+            if (selectedOption === currentQuestion.correctAnswer) {
+                quizActive = false;
+                document.getElementById("quizContainer").style.display = "none";
+            } else {
+                player.health--;
+                player.coalCollected = 0;
+                quizActive = false;
+                document.getElementById("quizContainer").style.display = "none";
+                if (player.health <= 0) {
+                    gameRunning = false;
+                    clearInterval(enemySpawnInterval);
+                    clearTimeout(enemyDespawnTimeout);
+                    document.getElementById("gameOver").style.display = "block";
+                }
+            }
+        }
+
+        // Touch control functions
+        function setupTouchControls() {
+            const upBtn = document.getElementById('up');
+            const downBtn = document.getElementById('down');
+            const leftBtn = document.getElementById('left');
+            const rightBtn = document.getElementById('right');
+            const shootBtn = document.getElementById('shoot');
+            
+            // Touch start events
+            upBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                player.dy = -player.speed;
+                upPressed = true;
+            });
+            
+            downBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                player.dy = player.speed;
+                downPressed = true;
+            });
+            
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                player.dx = -player.speed;
+                player.currentImage = player.imageLeft;
+                player.facing = "left";
+                leftPressed = true;
+            });
+            
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                player.dx = player.speed;
+                player.currentImage = player.imageRight;
+                player.facing = "right";
+                rightPressed = true;
+            });
+            
+            shootBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            
+            // Touch end events
+            upBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (upPressed) {
+                    player.dy = 0;
+                    upPressed = false;
+                }
+            });
+            
+            downBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (downPressed) {
+                    player.dy = 0;
+                    downPressed = false;
+                }
+            });
+            
+            leftBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (leftPressed) {
+                    player.dx = 0;
+                    leftPressed = false;
+                }
+            });
+            
+            rightBtn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                if (rightPressed) {
+                    player.dx = 0;
+                    rightPressed = false;
+                }
+            });
+            
+            // Mouse events for testing on desktop
+            upBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                player.dy = -player.speed;
+                upPressed = true;
+            });
+            
+            downBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                player.dy = player.speed;
+                downPressed = true;
+            });
+            
+            leftBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                player.dx = -player.speed;
+                player.currentImage = player.imageLeft;
+                player.facing = "left";
+                leftPressed = true;
+            });
+            
+            rightBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                player.dx = player.speed;
+                player.currentImage = player.imageRight;
+                player.facing = "right";
+                rightPressed = true;
+            });
+            
+            shootBtn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                shoot();
+            });
+            
+            // Mouse up events
+            document.addEventListener('mouseup', (e) => {
+                if (upPressed) {
+                    player.dy = 0;
+                    upPressed = false;
+                }
+                if (downPressed) {
+                    player.dy = 0;
+                    downPressed = false;
+                }
+                if (leftPressed) {
+                    player.dx = 0;
+                    leftPressed = false;
+                }
+                if (rightPressed) {
+                    player.dx = 0;
+                    rightPressed = false;
+                }
+            });
+        }
+
+        // Initialize touch controls
+        setupTouchControls();
+
+        // Set up keyboard controls
+        document.addEventListener("keydown", move);
+        document.addEventListener("keyup", stop);
+        document.addEventListener("keydown", (e) => { if (e.key === " ") shoot(); });
+
+        // Main game loop
+        function update() {
+            if (gameRunning) {
+                player.x += player.dx;
+                player.y += player.dy;
+
+                preventEdgeMovement();
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
+                drawPlayer();
+                drawEnemies();
+                drawSuns();
+                drawCoals();
+                drawBullets();
+                drawStats();
+                updateEnemies();
+                updateBullets();
+                collectSuns();
+                collectCoals();
+            }
+
+            requestAnimationFrame(update);
+        }
+ background.onload = () => {
+            player.imageRight.onload = player.imageLeft.onload = function () {
+                player.currentImage = player.imageRight;
+                update();
+            };
+        };
+
+
+    </script>
+</body>
+</html>

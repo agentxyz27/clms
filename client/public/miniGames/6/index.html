@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <title>Hamster Tectonic Climb</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      height: 100%;
+      background: #cce7ff;
+      font-family: sans-serif;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    
+    /* Title Screen Styles */
+    #titleScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+    }
+    #title {
+      color: white;
+      font-size: 3rem;
+      margin-bottom: 2rem;
+      text-align: center;
+      text-shadow: 0 0 10px #3498db;
+    }
+    #startButton {
+      padding: 15px 30px;
+      font-size: 1.5rem;
+      background: #3498db;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    #startButton:hover {
+      background: #2980b9;
+      transform: scale(1.05);
+    }
+    #cutsceneContainer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: black;
+      display: none;
+    }
+    #cutsceneVideo {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+    
+    /* Game Styles */
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      background: url('bg.png') no-repeat center center/cover;
+      overflow: hidden;
+      transition: background-image 0.5s ease;
+      display: none;
+    }
+    .hamster {
+      position: absolute;
+      width: 40px;
+      height: 40px;
+      background: url('ham.png') no-repeat center/cover;
+      bottom: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+    .platform {
+      position: absolute;
+      width: 25vw;
+      min-width: 120px;
+      max-width: 180px;
+      height: 20px;
+      background: url('obs.png') no-repeat center/cover;
+      border-radius: 10px;
+    }
+    .moving-platform {
+      background: url('moveobs.png') no-repeat center/cover;
+      box-shadow: 0 0 5px #5a3a15;
+    }
+    .quiz-platform {
+      background: url('quizobs.png') no-repeat center/cover;
+      box-shadow: 0 0 10px gold;
+      animation: pulse 1s infinite alternate;
+    }
+    @keyframes pulse {
+      from { box-shadow: 0 0 5px gold; }
+      to { box-shadow: 0 0 15px gold; }
+    }
+    .ground-platform {
+      position: absolute;
+      width: 100%;
+      height: 30px;
+      background: #5a3a15;
+      bottom: 150px;
+      left: 0;
+    }
+    .rock {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background: gray;
+      border-radius: 50%;
+    }
+    #controls {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px;
+      pointer-events: none;
+    }
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: auto;
+    }
+    button {
+      padding: 15px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      background: #f4a261;
+      color: white;
+      box-shadow: 0 5px #b35c1e;
+      width: 60px;
+      height: 60px;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    #scoreBoard {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 20px;
+      background: rgba(0,0,0,0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 5px;
+    }
+    #winScreen, #gameOverScreen {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 32px;
+      background: #2ecc71;
+      color: white;
+      padding: 20px;
+      border-radius: 20px;
+      display: none;
+      z-index: 2;
+      text-align: center;
+      max-width: 90vw;
+    }
+    #gameOverScreen {
+      background: #e74c3c;
+    }
+    #quizModal {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #3498db;
+      color: white;
+      padding: 20px;
+      border-radius: 15px;
+      z-index: 3;
+      display: none;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    }
+    #quizQuestion {
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+    .quiz-option {
+      background: #2980b9;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .quiz-option:hover {
+      background: #1a6ea0;
+    }
+    #quizResult {
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      button {
+        width: 80px;
+        height: 80px;
+        font-size: 24px;
+      }
+      #title {
+        font-size: 2rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Title Screen -->
+  <div id="titleScreen">
+    <h1 id="title">TECTONIC PLATEZZ</h1>
+    <button id="startButton">START GAME</button>
+    <div id="cutsceneContainer">
+      <video id="cutsceneVideo" controls>
+        <source src="tectonic_cutscene.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+      </video>
+    </div>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game">
+    <div id="scoreBoard">Score: 0 | Lives: <span id="livesCount">3</span></div>
+    <div class="hamster" id="hamster"></div>
+    <div class="ground-platform" id="ground"></div>
+    <div id="winScreen">NAABOT MONA STANDARDS NYA</div>
+    <div id="gameOverScreen">DIMO NAABOT STANDARDS NIYA</div>
+    <div id="quizModal">
+      <div id="quizQuestion"></div>
+      <div id="quizOptions"></div>
+      <div id="quizResult"></div>
+    </div>
+    <div id="controls">
+      <div class="control-group">
+        <button 
+          onmousedown="moveLeft()" 
+          onmouseup="stopMovement()"
+          ontouchstart="moveLeft(); event.preventDefault()"
+          ontouchend="stopMovement(); event.preventDefault()">⬅️</button>
+      </div>
+      <div class="control-group">
+        <button 
+          onmousedown="jump()"
+          ontouchstart="jump(); event.preventDefault()">⬆️</button>
+      </div>
+      <div class="control-group">
+        <button 
+          onmousedown="moveRight()" 
+          onmouseup="stopMovement()"
+          ontouchstart="moveRight(); event.preventDefault()"
+          ontouchend="stopMovement(); event.preventDefault()">➡️</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Title Screen Elements
+    const titleScreen = document.getElementById('titleScreen');
+    const startButton = document.getElementById('startButton');
+    const cutsceneContainer = document.getElementById('cutsceneContainer');
+    const cutsceneVideo = document.getElementById('cutsceneVideo');
+    const gameContainer = document.getElementById('game');
+
+    // Game Elements
+    const game = document.getElementById('game');
+    const hamster = document.getElementById('hamster');
+    const ground = document.getElementById('ground');
+    const scoreBoard = document.getElementById('scoreBoard');
+    const livesCount = document.getElementById('livesCount');
+    const winScreen = document.getElementById('winScreen');
+    const gameOverScreen = document.getElementById('gameOverScreen');
+    const quizModal = document.getElementById('quizModal');
+    const quizQuestion = document.getElementById('quizQuestion');
+    const quizOptions = document.getElementById('quizOptions');
+    const quizResult = document.getElementById('quizResult');
+
+    let score = 0;
+    let lives = 3;
+    let hamsterY = game.clientHeight - 190;
+    let hamsterX = game.clientWidth / 2 - 20;
+    let velocityY = 0;
+    let gravity = 0.8;
+    let jumping = false;
+    let onPlatform = false;
+    let platforms = [];
+    let rocks = [];
+    let keys = { left: false, right: false };
+    let currentLevel = 1;
+    let maxRocks = 2;
+    let rockSpawnInterval = 3000;
+    const controlsHeight = 120;
+    const minPlatformHeight = 150;
+    const platformSpacing = 60;
+    const jumpPower = -14;
+    let jumpCount = 0;
+    const maxJumps = 2;
+    let currentPlatform = null;
+    let gameRunning = true;
+    let quizActive = false;
+    let gameLoopId = null;
+
+    const backgrounds = ['bg.png', 'bg2.png', 'bg3.png'];
+    
+    // Tectonic Plate Quiz Questions
+    const quizQuestions = [
+      {
+        question: "What is the name of the theory that explains the movement of Earth's plates?",
+        options: [
+          "A. Continental Drift",
+          "B. Plate Tectonics",
+          "C. Seafloor Spreading",
+          "D. Mantle Convection"
+        ],
+        correct: 1
+      },
+      {
+        question: "Which of these is NOT a type of plate boundary?",
+        options: [
+          "A. Divergent",
+          "B. Convergent",
+          "C. Transform",
+          "D. Subductive"
+        ],
+        correct: 3
+      },
+      {
+        question: "What geological feature is created when two continental plates collide?",
+        options: [
+          "A. Ocean trench",
+          "B. Mid-ocean ridge",
+          "C. Mountain range",
+          "D. Volcanic island"
+        ],
+        correct: 2
+      },
+      {
+        question: "Which tectonic plate is the largest on Earth?",
+        options: [
+          "A. Eurasian Plate",
+          "B. African Plate",
+          "C. Pacific Plate",
+          "D. North American Plate"
+        ],
+        correct: 2
+      },
+      {
+        question: "What causes the tectonic plates to move?",
+        options: [
+          "A. Earth's magnetic field",
+          "B. Convection currents in the mantle",
+          "C. The rotation of the Earth",
+          "D. Gravitational pull from the Moon"
+        ],
+        correct: 1
+      }
+    ];
+
+    // Start Game Function
+    function startGame() {
+      startButton.style.display = 'none';
+      cutsceneContainer.style.display = 'flex';
+      cutsceneVideo.play();
+      cutsceneVideo.muted = false; // Ensure video is not muted
+      
+      // When video ends, start the game
+      cutsceneVideo.addEventListener('ended', function() {
+        cutsceneContainer.style.display = 'none';
+        titleScreen.style.display = 'none';
+        game.style.display = 'block';
+        initGame();
+      });
+      
+      // Also allow skipping the cutscene by clicking
+      cutsceneVideo.addEventListener('click', function() {
+        cutsceneVideo.currentTime = cutsceneVideo.duration;
+      });
+      
+      // Handle video error
+      cutsceneVideo.addEventListener('error', function() {
+        // If video fails to load, skip to game
+        cutsceneContainer.style.display = 'none';
+        titleScreen.style.display = 'none';
+        game.style.display = 'block';
+        initGame();
+      });
+    }
+
+    // Event listener for start button
+    startButton.addEventListener('click', startGame);
+    
+    // Also allow touch events for mobile
+    startButton.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      startGame();
+    });
+
+    function updateScore(val) {
+      score += val;
+      if (score < 0) score = 0;
+      scoreBoard.innerHTML = `Score: ${score} | Lives: <span id="livesCount">${lives}</span>`;
+      if (score >= 50) {
+        winScreen.style.display = 'block';
+        gameRunning = false;
+        cancelAnimationFrame(gameLoopId);
+      }
+    }
+
+    function loseLife() {
+      lives--;
+      livesCount.textContent = lives;
+      scoreBoard.innerHTML = `Score: ${score} | Lives: <span id="livesCount">${lives}</span>`;
+      if (lives <= 0) {
+        gameOverScreen.style.display = 'block';
+        gameRunning = false;
+        cancelAnimationFrame(gameLoopId);
+      }
+    }
+
+    function changeLevel() {
+      currentLevel++;
+      currentPlatform = null;
+      const bgIndex = (currentLevel - 1) % backgrounds.length;
+      game.style.backgroundImage = `url('${backgrounds[bgIndex]}')`;
+
+      hamsterY = game.clientHeight - 190;
+      hamsterX = game.clientWidth / 2 - 20;
+      hamster.style.top = hamsterY + 'px';
+      hamster.style.left = hamsterX + 'px';
+
+      platforms.forEach(platform => platform.remove());
+      rocks.forEach(rock => rock.remove());
+      platforms = [];
+      rocks = [];
+
+      ground.style.bottom = '150px';
+
+      for (let i = 0; i < 40; i++) {
+        spawnPlatform(game.clientHeight - i * platformSpacing - minPlatformHeight);
+      }
+    }
+
+    function spawnPlatform(yPos) {
+      if (yPos > game.clientHeight - controlsHeight - 50) return;
+
+      const platform = document.createElement('div');
+      platform.className = 'platform';
+
+      const platformType = Math.random();
+      if (platformType < 0.3) {
+        // Moving platform
+        platform.classList.add('moving-platform');
+        platform.speed = (Math.random() * 2 + 1) * (Math.random() < 0.5 ? 1 : -1);
+        platform.direction = platform.speed > 0 ? 1 : -1;
+      } else if (platformType < 0.4) {
+        // Quiz platform (10% chance)
+        platform.classList.add('quiz-platform');
+        platform.isQuiz = true;
+      }
+
+      const side = Math.random();
+      platform.style.left = (side < 0.33 ? '10%' : side < 0.66 ? '35%' : '60%');
+      platform.style.top = yPos + 'px';
+      game.appendChild(platform);
+      platforms.push(platform);
+    }
+
+    function spawnRock() {
+      if (!gameRunning) return;
+      if (rocks.length >= maxRocks) return;
+
+      const rock = document.createElement('div');
+      rock.className = 'rock';
+      rock.style.left = Math.random() * (game.clientWidth - 30) + 'px';
+      rock.style.top = '150px';
+      game.appendChild(rock);
+      rocks.push(rock);
+    }
+
+    function showQuiz(platform) {
+      if (quizActive) return;
+      quizActive = true;
+      gameRunning = false;
+      
+      const randomQuestion = quizQuestions[Math.floor(Math.random() * quizQuestions.length)];
+      quizQuestion.textContent = randomQuestion.question;
+      quizOptions.innerHTML = '';
+      
+      randomQuestion.options.forEach((option, index) => {
+        const optionElement = document.createElement('div');
+        optionElement.className = 'quiz-option';
+        optionElement.textContent = option;
+        optionElement.addEventListener('click', () => {
+          checkAnswer(index, randomQuestion.correct, platform);
+        });
+        quizOptions.appendChild(optionElement);
+      });
+      
+      quizResult.textContent = '';
+      quizModal.style.display = 'block';
+    }
+
+    function checkAnswer(selectedIndex, correctIndex, platform) {
+      if (selectedIndex === correctIndex) {
+        quizResult.textContent = 'Correct! +5 points';
+        quizResult.style.color = '#2ecc71';
+        updateScore(5);
+      } else {
+        quizResult.textContent = 'Wrong answer! -2 points';
+        quizResult.style.color = '#e74c3c';
+        updateScore(-2);
+      }
+      
+      // Remove the quiz platform after answering
+      if (platform && platform.parentNode) {
+        platform.remove();
+        const index = platforms.indexOf(platform);
+        if (index > -1) {
+          platforms.splice(index, 1);
+        }
+      }
+      
+      setTimeout(() => {
+        quizModal.style.display = 'none';
+        quizActive = false;
+        gameRunning = true;
+        // Restart the game loop
+        gameLoopId = requestAnimationFrame(gameLoop);
+      }, 1500);
+    }
+
+    function moveLeft() {
+      if (quizActive || !gameRunning) return;
+      keys.left = true;
+      keys.right = false;
+    }
+
+    function moveRight() {
+      if (quizActive || !gameRunning) return;
+      keys.right = true;
+      keys.left = false;
+    }
+
+    function stopMovement() {
+      keys.left = false;
+      keys.right = false;
+    }
+
+    function jump() {
+      if (quizActive || !gameRunning) return;
+      if ((!jumping || jumpCount < maxJumps) && (onPlatform || jumpCount < maxJumps)) {
+        velocityY = jumpPower;
+        jumping = true;
+        onPlatform = false;
+        currentPlatform = null;
+        jumpCount++;
+      }
+    }
+
+    function gameLoop() {
+      if (!gameRunning || quizActive) return;
+
+      if (keys.left) hamsterX -= 7;
+      if (keys.right) hamsterX += 7;
+      hamsterX = Math.max(0, Math.min(game.clientWidth - 40, hamsterX));
+      hamster.style.left = hamsterX + 'px';
+
+      velocityY += gravity;
+      hamsterY += velocityY;
+
+      const groundRect = ground.getBoundingClientRect();
+      const hamsterRect = hamster.getBoundingClientRect();
+
+      if (
+        hamsterRect.bottom >= groundRect.top &&
+        hamsterRect.bottom <= groundRect.top + 10 &&
+        hamsterRect.right >= groundRect.left &&
+        hamsterRect.left <= groundRect.right &&
+        velocityY >= 0
+      ) {
+        hamsterY = ground.offsetTop - 40;
+        velocityY = 0;
+        jumping = false;
+        onPlatform = true;
+        jumpCount = 0;
+        currentPlatform = ground;
+      }
+
+      if (hamsterY > game.clientHeight - 190) {
+        hamsterY = game.clientHeight - 190;
+        velocityY = 0;
+        jumping = false;
+        onPlatform = true;
+        jumpCount = 0;
+        currentPlatform = ground;
+      }
+
+      if (hamsterY <= 0) {
+        changeLevel();
+      }
+
+      hamster.style.top = hamsterY + 'px';
+
+      let landed = false;
+      platforms.forEach(platform => {
+        if (platform.classList.contains('moving-platform')) {
+          let left = parseFloat(platform.style.left);
+          const platformWidth = platform.offsetWidth;
+          
+          left += platform.speed;
+          
+          if (left <= 0) {
+            left = 0;
+            platform.speed = Math.abs(platform.speed);
+          } else if (left + platformWidth >= game.clientWidth) {
+            left = game.clientWidth - platformWidth;
+            platform.speed = -Math.abs(platform.speed);
+          }
+          
+          platform.style.left = left + 'px';
+
+          if (currentPlatform === platform) {
+            hamsterX += platform.speed;
+            hamsterX = Math.max(0, Math.min(game.clientWidth - 40, hamsterX));
+            hamster.style.left = hamsterX + 'px';
+          }
+        }
+
+        const platRect = platform.getBoundingClientRect();
+        if (
+          hamsterRect.bottom >= platRect.top &&
+          hamsterRect.bottom <= platRect.top + 10 &&
+          hamsterRect.right >= platRect.left &&
+          hamsterRect.left <= platRect.right &&
+          velocityY >= 0
+        ) {
+          hamsterY = platform.offsetTop - 40;
+          velocityY = 0;
+          jumping = false;
+          onPlatform = true;
+          jumpCount = 0;
+          currentPlatform = platform;
+          if (!platform.landed) {
+            updateScore(1);
+            platform.landed = true;
+            
+            // Check if this is a quiz platform
+            if (platform.isQuiz) {
+              showQuiz(platform);
+              return; // Skip further processing for this platform
+            }
+          }
+          landed = true;
+        }
+      });
+
+      if (!landed && hamsterY < game.clientHeight - 190) {
+        onPlatform = false;
+        currentPlatform = null;
+      }
+
+      rocks.forEach((rock, index) => {
+        const top = parseFloat(rock.style.top);
+        rock.style.top = (top + 4) + 'px';
+
+        const rockRect = rock.getBoundingClientRect();
+        if (
+          hamsterRect.left < rockRect.right &&
+          hamsterRect.right > rockRect.left &&
+          hamsterRect.top < rockRect.bottom &&
+          hamsterRect.bottom > rockRect.top
+        ) {
+          loseLife();
+          rock.remove();
+          rocks.splice(index, 1);
+        }
+
+        if (top > game.clientHeight - controlsHeight - 50) {
+          rock.remove();
+          rocks.splice(index, 1);
+        }
+      });
+
+      gameLoopId = requestAnimationFrame(gameLoop);
+    }
+
+    // Handle touch cancellation
+    document.addEventListener('touchcancel', function() {
+      stopMovement();
+    });
+
+    // Initialize game
+    function initGame() {
+      game.style.backgroundImage = `url('${backgrounds[0]}')`;
+      ground.style.bottom = '150px';
+      for (let i = 0; i < 40; i++) {
+        spawnPlatform(game.clientHeight - i * platformSpacing - minPlatformHeight);
+      }
+      setInterval(spawnRock, rockSpawnInterval);
+      gameLoopId = requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>

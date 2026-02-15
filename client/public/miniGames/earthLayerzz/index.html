@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Earth Layerzz - Vertical Puzzle Platformer</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #0a192f; touch-action: none; }
+        canvas { display: block; width: 100vw; height: 100vh; }
+        #winMessage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            display: none;
+            text-align: center;
+            z-index: 100;
+        }
+        #quizContainer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            font-family: Arial, sans-serif;
+            font-size: 20px;
+            display: none;
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+            z-index: 100;
+        }
+        #quizQuestion {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .quizOption {
+            background-color: #1a3a6e;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .quizOption:hover {
+            background-color: #2a5a9e;
+        }
+        #healthContainer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            color: white;
+            z-index: 10;
+        }
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            display: none;
+            text-align: center;
+            z-index: 100;
+        }
+        
+        /* Mobile controls */
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            z-index: 10;
+            touch-action: none;
+        }
+        
+        #dpad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 5px;
+            margin-left: 20px;
+            touch-action: none;
+        }
+        
+        .dpad-btn {
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 24px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        
+        #up {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        #left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        #right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        #down {
+            grid-column: 2;
+            grid-row: 3;
+        }
+        
+        #action-buttons {
+            display: flex;
+            margin-right: 20px;
+            align-items: center;
+            touch-action: none;
+        }
+        
+        .action-btn {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(255, 100, 100, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-size: 16px;
+            margin-left: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        
+        @media (min-width: 768px) {
+            #controls {
+                display: none;
+            }
+        }
+        
+        /* Start Screen Styles */
+        #startScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #0a192f;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+        }
+        
+        #title {
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 48px;
+            margin-bottom: 40px;
+            text-align: center;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        #startButton {
+            background-color: #1a6e1a;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 24px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #startButton:hover {
+            background-color: #2a8e2a;
+            transform: scale(1.05);
+        }
+        
+        /* Video Container */
+        #videoContainer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: 150;
+            display: none;
+        }
+        
+        #cutsceneVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body>
+    <!-- Start Screen -->
+    <div id="startScreen">
+        <h1 id="title">EARTH LAYERZZ</h1>
+        <button id="startButton">START GAME</button>
+    </div>
+    
+    <!-- Video Cutscene -->
+    <div id="videoContainer">
+        <video id="cutsceneVideo" autoplay>
+            <source src="cutscene.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    
+    <!-- Game Elements -->
+    <canvas id="gameCanvas"></canvas>
+    <div id="winMessage">You Win!<br>pero di kaparin nya gusto!</div>
+    <div id="quizContainer">
+        <div id="quizQuestion"></div>
+        <div class="quizOption" data-answer="A"></div>
+        <div class="quizOption" data-answer="B"></div>
+        <div class="quizOption" data-answer="C"></div>
+        <div class="quizOption" data-answer="D"></div>
+    </div>
+    <div id="healthContainer">Health: <span id="health">3</span></div>
+    <div id="gameOver">Game Over!<br>Refresh to play again.</div>
+    
+    <!-- Mobile controls -->
+    <div id="controls">
+        <div id="dpad">
+            <div id="up" class="dpad-btn">↑</div>
+            <div id="left" class="dpad-btn">←</div>
+            <div id="right" class="dpad-btn">→</div>
+            <div id="down" class="dpad-btn">↓</div>
+        </div>
+        <div id="action-buttons">
+            <div id="grab" class="action-btn">GRAB</div>
+        </div>
+    </div>
+    
+    <script>
+        // Start Screen and Video Handling
+        const startScreen = document.getElementById('startScreen');
+        const startButton = document.getElementById('startButton');
+        const videoContainer = document.getElementById('videoContainer');
+        const cutsceneVideo = document.getElementById('cutsceneVideo');
+        
+        // Start game when button is clicked
+        startButton.addEventListener('click', function() {
+            startScreen.style.display = 'none';
+            videoContainer.style.display = 'block';
+            
+            // Unmute and play video
+            cutsceneVideo.muted = false;
+            cutsceneVideo.play().catch(e => {
+                console.error("Video play failed:", e);
+                // If video fails to play, start game anyway
+                startGame();
+            });
+        });
+        
+        // When video ends, start the game
+        cutsceneVideo.addEventListener('ended', startGame);
+        
+        // If video fails to load, start game after a timeout
+        setTimeout(() => {
+            if (videoContainer.style.display === 'block' && cutsceneVideo.readyState < 3) {
+                startGame();
+            }
+        }, 5000);
+        
+        function startGame() {
+            videoContainer.style.display = 'none';
+            initializeGame();
+        }
+        
+        function initializeGame() {
+            const canvas = document.getElementById("gameCanvas");
+            const ctx = canvas.getContext("2d");
+            const winMessage = document.getElementById("winMessage");
+            const quizContainer = document.getElementById("quizContainer");
+            const quizQuestion = document.getElementById("quizQuestion");
+            const quizOptions = document.querySelectorAll(".quizOption");
+            const healthDisplay = document.getElementById("health");
+            const gameOverDisplay = document.getElementById("gameOver");
+
+            // Mobile control elements
+            const upBtn = document.getElementById("up");
+            const leftBtn = document.getElementById("left");
+            const rightBtn = document.getElementById("right");
+            const downBtn = document.getElementById("down");
+            const grabBtn = document.getElementById("grab");
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            window.addEventListener("resize", resizeCanvas);
+            resizeCanvas();
+
+            // Background image
+            const bgImage = new Image();
+            bgImage.src = "bg.png";
+
+            // Player with images
+            let player = {
+                x: 50,
+                y: 300,
+                width: 60,
+                height: 60,
+                speed: 5,
+                carrySpeed: 2,
+                dx: 0,
+                dy: 0,
+                grabSide: null,
+                grabbedObject: null,
+                direction: "right",
+                rightImage: new Image(),
+                leftImage: new Image(),
+                health: 3
+            };
+
+            // Load player images
+            player.rightImage.src = "ham.png";
+            player.leftImage.src = "ham2.png";
+
+            // Obstacle specifications - Reduced heights from 40 to 30
+            const obstacleSpecs = [
+                { width: 100, height: 30, image: "ob1.png", id: 1 },
+                { width: 100, height: 30, image: "ob2.png", id: 2 },
+                { width: 100, height: 30, image: "ob3.png", id: 3 },
+                { width: 100, height: 30, image: "ob4.png", id: 4 },
+                { width: 100, height: 30, image: "ob5.png", id: 5 }
+            ];
+
+            // Vertical target positions that match obstacle sizes
+            const targetPositions = [];
+            let currentY = 50;
+            const spacing = 20;
+            
+            // Create targets that match obstacle sizes
+            for (let i = 0; i < obstacleSpecs.length; i++) {
+                const spec = obstacleSpecs[i];
+                targetPositions.push({
+                    x: 50,
+                    y: currentY,
+                    width: spec.width,
+                    height: spec.height,
+                    id: spec.id
+                });
+                currentY += spec.height + spacing;
+            }
+
+            // Asteroids
+            const asteroids = [];
+            const asteroidImage = new Image();
+            asteroidImage.src = "asteroids.png";
+            const asteroidSpeed = 0.50; // Reduced from 2
+            let lastAsteroidSpawn = 0;
+            const asteroidSpawnInterval = 2000;
+
+            // Quiz system
+            const quizQuestions = [
+                {
+                    question: "Which layer of the Earth is responsible for the movement of tectonic plates?",
+                    options: {
+                        A: "Crust",
+                        B: "Mantle",
+                        C: "Outer Core",
+                        D: "Inner Core"
+                    },
+                    correctAnswer: "B"
+                },
+                {
+                    question: "What is the outermost layer of the Earth called?",
+                    options: {
+                        A: "Mantle",
+                        B: "Inner Core",
+                        C: "Crust",
+                        D: "Outer Core"
+                    },
+                    correctAnswer: "C"
+                },
+                {
+                    question: "Which layer of the Earth is liquid?",
+                    options: {
+                        A: "Crust",
+                        B: "Mantle",
+                        C: "Outer Core",
+                        D: "Inner Core"
+                    },
+                    correctAnswer: "C"
+                },
+                {
+                    question: "The Mohorovičić discontinuity (Moho) separates which two layers?",
+                    options: {
+                        A: "Crust and Mantle",
+                        B: "Mantle and Outer Core",
+                        C: "Outer Core and Inner Core",
+                        D: "Lithosphere and Asthenosphere"
+                    },
+                    correctAnswer: "A"
+                },
+                {
+                    question: "Which layer of Earth is the thickest?",
+                    options: {
+                        A: "Crust",
+                        B: "Mantle",
+                        C: "Outer Core",
+                        D: "Inner Core"
+                    },
+                    correctAnswer: "B"
+                },
+                {
+                    question: "The asthenosphere is part of which Earth layer?",
+                    options: {
+                        A: "Crust",
+                        B: "Upper Mantle",
+                        C: "Lower Mantle",
+                        D: "Outer Core"
+                    },
+                    correctAnswer: "B"
+                },
+                {
+                    question: "What is the primary composition of Earth's inner core?",
+                    options: {
+                        A: "Solid iron and nickel",
+                        B: "Liquid iron and nickel",
+                        C: "Solid silicate rocks",
+                        D: "Liquid silicate rocks"
+                    },
+                    correctAnswer: "A"
+                },
+                {
+                    question: "Which layer is divided into tectonic plates?",
+                    options: {
+                        A: "Lithosphere",
+                        B: "Asthenosphere",
+                        C: "Mesosphere",
+                        D: "Outer Core"
+                    },
+                    correctAnswer: "A"
+                }
+            ];
+            let currentQuizQuestion = 0;
+            let gamePaused = false;
+            let asteroidToRemove = null;
+
+            // Create initial asteroids (2-3)
+            function spawnAsteroids() {
+                const count = Math.floor(Math.random() * 1) + 1; // Now 2-3 asteroids
+                for (let i = 0; i < count; i++) {
+                    createAsteroid();
+                }
+            }
+
+            function createAsteroid() {
+                const size = Math.random() * 10 + 40;
+                asteroids.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    width: size,
+                    height: size,
+                    speed: Math.random() * 1 + asteroidSpeed // Reduced variation
+                });
+            }
+
+            // Function to get random position that doesn't overlap with existing objects
+            function getRandomPosition(newObj, existingObjs) {
+                const maxAttempts = 100;
+                let attempt = 0;
+                
+                while (attempt < maxAttempts) {
+                    attempt++;
+                    
+                    const x = 50 + Math.random() * (canvas.width * 0.66 - 50);
+                    const y = 50 + Math.random() * (canvas.height - 100);
+                    
+                    let validPosition = true;
+                    for (const obj of existingObjs) {
+                        const distance = Math.sqrt(
+                            Math.pow(x - obj.x, 2) + 
+                            Math.pow(y - obj.y, 2)
+                        );
+                        
+                        if (distance < 200) {
+                            validPosition = false;
+                            break;
+                        }
+                    }
+                    
+                    if (validPosition) {
+                        return { x, y };
+                    }
+                }
+                
+                return { 
+                    x: 100 + Math.random() * (canvas.width - 200),
+                    y: 100 + Math.random() * (canvas.height - 200)
+                };
+            }
+
+            // Create obstacles with random positions
+            let objects = [];
+            for (let i = 0; i < obstacleSpecs.length; i++) {
+                const spec = obstacleSpecs[i];
+                const randomPos = getRandomPosition(spec, objects);
+                
+                const obstacle = {
+                    x: randomPos.x,
+                    y: randomPos.y,
+                    width: spec.width,
+                    height: spec.height,
+                    image: new Image(),
+                    grabbed: false,
+                    grabOffsetX: 0,
+                    grabOffsetY: 0,
+                    prevX: randomPos.x,
+                    prevY: randomPos.y,
+                    id: spec.id,
+                    targetX: targetPositions[i].x,
+                    targetY: targetPositions[i].y,
+                    targetWidth: targetPositions[i].width,
+                    targetHeight: targetPositions[i].height,
+                    isInPosition: false
+                };
+                obstacle.image.src = spec.image;
+                objects.push(obstacle);
+            }
+
+            let keys = {};
+            let gameWon = false;
+            let gameOver = false;
+
+            // Mobile touch controls state
+            let mobileControls = {
+                up: false,
+                left: false,
+                right: false,
+                down: false,
+                grab: false
+            };
+
+            // Keyboard event listeners
+            window.addEventListener("keydown", (e) => {
+                if (!gamePaused && !gameOver) {
+                    keys[e.key] = true;
+                }
+            });
+            
+            window.addEventListener("keyup", (e) => {
+                keys[e.key] = false;
+                if (e.key === "q") {
+                    if (player.grabbedObject !== null) {
+                        player.grabbedObject.grabbed = false;
+                        player.grabbedObject = null;
+                    }
+                    player.grabSide = null;
+                    mobileControls.grab = false;
+                }
+            });
+
+            // Mobile control event listeners
+            function setupMobileControls() {
+                // Button press events
+                upBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    mobileControls.up = true;
+                    upBtn.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+                });
+                
+                upBtn.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    mobileControls.up = false;
+                    upBtn.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                });
+                
+                leftBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    mobileControls.left = true;
+                    leftBtn.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+                });
+                
+                leftBtn.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    mobileControls.left = false;
+                    leftBtn.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                });
+                
+                rightBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    mobileControls.right = true;
+                    rightBtn.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+                });
+                
+                rightBtn.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    mobileControls.right = false;
+                    rightBtn.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                });
+                
+                downBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    mobileControls.down = true;
+                    downBtn.style.backgroundColor = "rgba(255, 255, 255, 0.7)";
+                });
+                
+                downBtn.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    mobileControls.down = false;
+                    downBtn.style.backgroundColor = "rgba(255, 255, 255, 0.3)";
+                });
+                
+                grabBtn.addEventListener("touchstart", (e) => {
+                    e.preventDefault();
+                    mobileControls.grab = true;
+                    grabBtn.style.backgroundColor = "rgba(255, 100, 100, 0.8)";
+                    
+                    if (player.grabbedObject === null && !gamePaused) {
+                        for (let obj of objects) {
+                            if (checkCollision(player, obj)) {
+                                obj.grabbed = true;
+                                player.grabbedObject = obj;
+                                player.grabSide = determineGrabSide(player, obj);
+                                
+                                switch(player.grabSide) {
+                                    case "left":
+                                        obj.grabOffsetX = player.x - (obj.x + obj.width);
+                                        obj.grabOffsetY = player.y - obj.y;
+                                        break;
+                                    case "right":
+                                        obj.grabOffsetX = player.x + player.width - obj.x;
+                                        obj.grabOffsetY = player.y - obj.y;
+                                        break;
+                                    case "top":
+                                        obj.grabOffsetX = player.x - obj.x;
+                                        obj.grabOffsetY = player.y - (obj.y + obj.height);
+                                        break;
+                                    case "bottom":
+                                        obj.grabOffsetX = player.x - obj.x;
+                                        obj.grabOffsetY = player.y + player.height - obj.y;
+                                        break;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                });
+                
+                grabBtn.addEventListener("touchend", (e) => {
+                    e.preventDefault();
+                    mobileControls.grab = false;
+                    grabBtn.style.backgroundColor = "rgba(255, 100, 100, 0.5)";
+                    
+                    if (player.grabbedObject !== null) {
+                        player.grabbedObject.grabbed = false;
+                        player.grabbedObject = null;
+                    }
+                    player.grabSide = null;
+                });
+                
+                // Prevent default touch behavior on controls
+                const controlElements = [upBtn, leftBtn, rightBtn, downBtn, grabBtn];
+                controlElements.forEach(el => {
+                    el.addEventListener("touchmove", (e) => e.preventDefault());
+                });
+            }
+
+            // Quiz event listeners
+            quizOptions.forEach(option => {
+                option.addEventListener("click", function() {
+                    if (gameOver) return;
+                    
+                    const selectedAnswer = this.getAttribute("data-answer");
+                    const correctAnswer = quizQuestions[currentQuizQuestion].correctAnswer;
+                    
+                    if (selectedAnswer === correctAnswer) {
+                        // Correct answer - remove the asteroid and resume game
+                        if (asteroidToRemove !== null) {
+                            const index = asteroids.indexOf(asteroidToRemove);
+                            if (index !== -1) {
+                                asteroids.splice(index, 1);
+                            }
+                            asteroidToRemove = null;
+                        }
+                        
+                        // Reset option styles
+                        quizOptions.forEach(opt => {
+                            opt.style.backgroundColor = "#1a3a6e";
+                            opt.textContent = opt.textContent.split(" (")[0];
+                        });
+                        
+                        quizContainer.style.display = "none";
+                        gamePaused = false;
+                        
+                        // Cycle to next question for next time
+                        currentQuizQuestion = (currentQuizQuestion + 1) % quizQuestions.length;
+                    } else {
+                        // Wrong answer - lose health
+                        player.health--;
+                        healthDisplay.textContent = player.health;
+                        
+                        if (player.health <= 0) {
+                            gameOver = true;
+                            gameOverDisplay.style.display = "block";
+                            quizContainer.style.display = "none";
+                            return;
+                        }
+                        
+                        // Show correct answer briefly
+                        this.textContent += " (Wrong)";
+                        this.style.backgroundColor = "#6e1a1a";
+                        
+                        // Find and highlight correct answer
+                        quizOptions.forEach(opt => {
+                            if (opt.getAttribute("data-answer") === correctAnswer) {
+                                opt.style.backgroundColor = "#1a6e1a";
+                                opt.textContent += " (Correct)";
+                            }
+                        });
+                        
+                        // After delay, resume game
+                        setTimeout(() => {
+                            if (gameOver) return;
+                            
+                            // Reset option styles
+                            quizOptions.forEach(opt => {
+                                opt.style.backgroundColor = "#1a3a6e";
+                                opt.textContent = opt.textContent.split(" (")[0];
+                            });
+                            
+                            quizContainer.style.display = "none";
+                            gamePaused = false;
+                            currentQuizQuestion = (currentQuizQuestion + 1) % quizQuestions.length;
+                            
+                            // Reset player position
+                            player.x = 50;
+                            player.y = 300;
+                            
+                            // If player was carrying something, drop it
+                            if (player.grabbedObject) {
+                                player.grabbedObject.grabbed = false;
+                                player.grabbedObject = null;
+                                player.grabSide = null;
+                            }
+                            
+                            // Remove the asteroid that hit the player
+                            if (asteroidToRemove !== null) {
+                                const index = asteroids.indexOf(asteroidToRemove);
+                                if (index !== -1) {
+                                    asteroids.splice(index, 1);
+                                }
+                                asteroidToRemove = null;
+                            }
+                        }, 2000);
+                    }
+                });
+            });
+
+            function checkCollision(a, b) {
+                return a.x < b.x + b.width &&
+                       a.x + a.width > b.x &&
+                       a.y < b.y + b.height &&
+                       a.y + a.height > b.y;
+            }
+
+            function checkBoundaries() {
+                if (player.x < 0) player.x = 0;
+                if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+                if (player.y < 0) player.y = 0;
+                if (player.y + player.height > canvas.height) player.y = canvas.height - player.height;
+            }
+
+            function determineGrabSide(player, object) {
+                const playerCenterX = player.x + player.width/2;
+                const playerCenterY = player.y + player.height/2;
+                const objectCenterX = object.x + object.width/2;
+                const objectCenterY = object.y + object.height/2;
+                
+                const dx = playerCenterX - objectCenterX;
+                const dy = playerCenterY - objectCenterY;
+                
+                return Math.abs(dx) > Math.abs(dy) ? 
+                       (dx > 0 ? "right" : "left") : 
+                       (dy > 0 ? "bottom" : "top");
+            }
+
+            function updateObjectPosition(obj, newX, newY) {
+                obj.prevX = obj.x;
+                obj.prevY = obj.y;
+                obj.x = newX;
+                obj.y = newY;
+                
+                for (let otherObj of objects) {
+                    if (otherObj !== obj && checkCollision(obj, otherObj)) {
+                        obj.x = obj.prevX;
+                        obj.y = obj.prevY;
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            function checkWinCondition() {
+                let allCorrect = true;
+                
+                for (let i = 0; i < objects.length; i++) {
+                    const obj = objects[i];
+                    const target = targetPositions[i];
+                    
+                    obj.isInPosition = (
+                        Math.abs(obj.x - target.x) < 30 && 
+                        Math.abs(obj.y - target.y) < 30 &&
+                        Math.abs(obj.width - target.width) < 10 &&
+                        Math.abs(obj.height - target.height) < 10
+                    );
+                    
+                    if (!obj.isInPosition) {
+                        allCorrect = false;
+                    }
+                }
+                
+                if (allCorrect) {
+                    for (let i = 0; i < objects.length; i++) {
+                        if (objects[i].id !== i+1) {
+                            allCorrect = false;
+                            break;
+                        }
+                    }
+                }
+                
+                return allCorrect;
+            }
+
+            function showQuiz() {
+                gamePaused = true;
+                
+                // Set up the question and options
+                const question = quizQuestions[currentQuizQuestion];
+                quizQuestion.textContent = question.question;
+                
+                quizOptions.forEach(option => {
+                    const answerKey = option.getAttribute("data-answer");
+                    option.textContent = `${answerKey}) ${question.options[answerKey]}`;
+                    option.style.backgroundColor = "#1a3a6e";
+                });
+                
+                quizContainer.style.display = "block";
+            }
+
+            function updateAsteroids() {
+                const now = Date.now();
+                
+                if (now - lastAsteroidSpawn > asteroidSpawnInterval && !gamePaused) {
+                    spawnAsteroids();
+                    lastAsteroidSpawn = now;
+                }
+                
+                for (let i = asteroids.length - 1; i >= 0; i--) {
+                    const asteroid = asteroids[i];
+                    asteroid.y += asteroid.speed;
+                    
+                    if (asteroid.y > canvas.height) {
+                        asteroids.splice(i, 1);
+                    }
+                    
+                    if (checkCollision(player, asteroid) && !gamePaused) {
+                        // Store the asteroid that hit the player
+                        asteroidToRemove = asteroid;
+                        
+                        // Show quiz
+                        showQuiz();
+                        break;
+                    }
+                }
+            }
+
+            function update() {
+                if (gameWon || gameOver) return;
+
+                if (!gamePaused) {
+                    player.dx = 0;
+                    player.dy = 0;
+
+                    const currentSpeed = player.grabbedObject ? player.carrySpeed : player.speed;
+
+                    // Check keyboard controls
+                    if (keys["ArrowRight"] || mobileControls.right) {
+                        player.dx = currentSpeed;
+                        player.direction = "right";
+                    }
+                    if (keys["ArrowLeft"] || mobileControls.left) {
+                        player.dx = -currentSpeed;
+                        player.direction = "left";
+                    }
+                    if (keys["ArrowUp"] || mobileControls.up) player.dy = -currentSpeed;
+                    if (keys["ArrowDown"] || mobileControls.down) player.dy = currentSpeed;
+
+                    // Check grab action from keyboard or mobile
+                    if ((keys["q"] || mobileControls.grab) && player.grabbedObject === null) {
+                        for (let obj of objects) {
+                            if (checkCollision(player, obj)) {
+                                obj.grabbed = true;
+                                player.grabbedObject = obj;
+                                player.grabSide = determineGrabSide(player, obj);
+                                
+                                switch(player.grabSide) {
+                                    case "left":
+                                        obj.grabOffsetX = player.x - (obj.x + obj.width);
+                                        obj.grabOffsetY = player.y - obj.y;
+                                        break;
+                                    case "right":
+                                        obj.grabOffsetX = player.x + player.width - obj.x;
+                                        obj.grabOffsetY = player.y - obj.y;
+                                        break;
+                                    case "top":
+                                        obj.grabOffsetX = player.x - obj.x;
+                                        obj.grabOffsetY = player.y - (obj.y + obj.height);
+                                        break;
+                                    case "bottom":
+                                        obj.grabOffsetX = player.x - obj.x;
+                                        obj.grabOffsetY = player.y + player.height - obj.y;
+                                        break;
+                                }
+                                break;
+                            }
+                        }
+                    }
+
+                    player.x += player.dx;
+                    player.y += player.dy;
+                    checkBoundaries();
+
+                    if (player.grabbedObject !== null) {
+                        const obj = player.grabbedObject;
+                        let newX, newY;
+                        
+                        switch(player.grabSide) {
+                            case "left":
+                                newX = player.x - obj.width - obj.grabOffsetX;
+                                newY = player.y - obj.grabOffsetY;
+                                break;
+                            case "right":
+                                newX = player.x + player.width - obj.grabOffsetX;
+                                newY = player.y - obj.grabOffsetY;
+                                break;
+                            case "top":
+                                newX = player.x - obj.grabOffsetX;
+                                newY = player.y - obj.height - obj.grabOffsetY;
+                                break;
+                            case "bottom":
+                                newX = player.x - obj.grabOffsetX;
+                                newY = player.y + player.height - obj.grabOffsetY;
+                                break;
+                        }
+                        
+                        if (!updateObjectPosition(obj, newX, newY)) {
+                            if (player.grabSide === "left") player.x = obj.x + obj.width + obj.grabOffsetX;
+                            else if (player.grabSide === "right") player.x = obj.x + obj.grabOffsetX - player.width;
+                            else if (player.grabSide === "top") player.y = obj.y + obj.height + obj.grabOffsetY;
+                            else if (player.grabSide === "bottom") player.y = obj.y + obj.grabOffsetY - player.height;
+                        }
+                    }
+
+                    updateAsteroids();
+
+                    if (checkWinCondition()) {
+                        gameWon = true;
+                        winMessage.style.display = "block";
+                    }
+                }
+
+                draw();
+                requestAnimationFrame(update);
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                if (bgImage.complete) {
+                    ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+                }
+
+                if (!gameWon) {
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+                    for (let i = 0; i < targetPositions.length; i++) {
+                        const target = targetPositions[i];
+                        ctx.fillRect(target.x, target.y, target.width, target.height);
+                        ctx.fillStyle = "white";
+                        ctx.font = "20px Arial";
+                        ctx.fillText((i+1).toString(), target.x + 10, target.y + 30);
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+                    }
+                }
+
+                for (let obj of objects) {
+                    if (obj.image.complete) {
+                        if (obj.isInPosition) {
+                            ctx.drawImage(obj.image, obj.targetX, obj.targetY, obj.targetWidth, obj.targetHeight);
+                        } else {
+                            ctx.drawImage(obj.image, obj.x, obj.y, obj.width, obj.height);
+                        }
+                    } else {
+                        ctx.fillStyle = obj.isInPosition ? "green" : "gray";
+                        ctx.fillRect(
+                            obj.isInPosition ? obj.targetX : obj.x, 
+                            obj.isInPosition ? obj.targetY : obj.y, 
+                            obj.isInPosition ? obj.targetWidth : obj.width, 
+                            obj.isInPosition ? obj.targetHeight : obj.height
+                        );
+                        ctx.fillStyle = "white";
+                        ctx.font = "20px Arial";
+                        ctx.fillText(obj.id.toString(), 
+                            (obj.isInPosition ? obj.targetX : obj.x) + 10, 
+                            (obj.isInPosition ? obj.targetY : obj.y) + 30);
+                    }
+                }
+
+                for (const asteroid of asteroids) {
+                    if (asteroidImage.complete) {
+                        ctx.drawImage(asteroidImage, asteroid.x, asteroid.y, asteroid.width, asteroid.height);
+                    } else {
+                        ctx.fillStyle = "gray";
+                        ctx.beginPath();
+                        ctx.arc(
+                            asteroid.x + asteroid.width/2,
+                            asteroid.y + asteroid.height/2,
+                            asteroid.width/2,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+                }
+
+                if (player.direction === "right" && player.rightImage.complete) {
+                    ctx.drawImage(player.rightImage, player.x, player.y, player.width, player.height);
+                } else if (player.direction === "left" && player.leftImage.complete) {
+                    ctx.drawImage(player.leftImage, player.x, player.y, player.width, player.height);
+                } else {
+                    ctx.fillStyle = "red";
+                    ctx.fillRect(player.x, player.y, player.width, player.height);
+                }
+            }
+
+            // Initialize mobile controls
+            setupMobileControls();
+            spawnAsteroids();
+            update();
+        }
+    </script>
+</body>
+</html>
